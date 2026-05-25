@@ -1,12 +1,12 @@
 # Music Genre Classification using a Hybrid CRNN Model
 
-<!-- [![Live App](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://music-genre-classification-crnn.streamlit.app/) -->
+[![Live App](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://music-genre-classification-hybrid-crnn.streamlit.app/)
 
 ## Overview
 
 This project focuses on classifying music into 10 different target genres using advanced Deep Learning techniques. The current iteration utilizes a high-performance **Hybrid CRNN (Convolutional Recurrent Neural Network)** embedded with an attention mechanism to analyze audio signals. By breaking audio into rolling 4-second chunks and converting them into high-resolution Mel spectrograms, the model accurately identifies complex spatio-temporal audio patterns. 
 
-<!-- You can try the live application here: **[Music Genre Classifier App](https://music-genre-classification-crnn.streamlit.app/)** -->
+You can try the live application here: **[Music Genre Classifier App](https://music-genre-classification-hybrid-crnn.streamlit.app/)**
 
 ## Features
 
