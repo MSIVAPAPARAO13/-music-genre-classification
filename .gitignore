@@ -1,0 +1,24 @@
+# Project-specific: Large Data and Models
+Data/
+*.npy
+
+
+# Jupyter Notebook & Python essentials
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+# Virtual Environments
+venv/
+env/
+.venv
+
+# OS/IDE settings
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Additional generated files/folders
+anaconda_projects/
+
