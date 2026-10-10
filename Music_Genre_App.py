@@ -464,27 +464,74 @@ def render_ui():
     # HOME PAGE
     # -----------------------------------------------------
     if app_mode == "Home":
-        st.title("🎧 Music Genre Classification System")
-        st.subheader("Deep Audio Analysis using a Leakage-Safe Hybrid CRNN")
+        st.markdown(
+            """
+            <div class="music-hero">
+              <div class="music-eyebrow">DEEP LEARNING · AUDIO INTELLIGENCE</div>
+              <h1>Discover the genre behind your sound.</h1>
+              <p>Upload a track, explore its acoustic fingerprint, and see how a hybrid CNN–BiLSTM–Attention model classifies music across ten genres.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        image_path = os.path.join(BASE_DIR, "Images", "home.jpg")
-        if os.path.exists(image_path):
-            st.image(image_path, use_container_width=True)
+        hero_cols = st.columns([1.15, 0.85], gap="large")
+        with hero_cols[0]:
+            image_path = os.path.join(BASE_DIR, "Images", "home.jpg")
+            if os.path.exists(image_path):
+                st.image(image_path, use_container_width=True)
+            st.markdown(
+                """
+                <div class="music-panel">
+                  <h3>Explore your audio</h3>
+                  <p>Start with an MP3 or WAV file that is at least four seconds long. The app resamples it to 22,050 Hz, analyzes overlapping four-second windows, and combines their model scores.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with hero_cols[1]:
+            st.markdown("#### What you can explore")
+            st.markdown(
+                """
+                <div class="music-feature">
+                  <div class="music-feature-icon">♫</div>
+                  <div><strong>Genre prediction</strong><p>Top-three rankings and scores for all ten genres.</p></div>
+                </div>
+                <div class="music-feature">
+                  <div class="music-feature-icon">〰</div>
+                  <div><strong>Audio visualization</strong><p>Waveform, mel-spectrogram, and chunk-by-chunk results.</p></div>
+                </div>
+                <div class="music-feature">
+                  <div class="music-feature-icon">◎</div>
+                  <div><strong>Model insights</strong><p>Grad-CAM visualization and held-out GTZAN evaluation metrics.</p></div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.markdown("#### Genres supported")
+            st.caption("Blues · Classical · Country · Disco · Hip-hop · Jazz · Metal · Pop · Reggae · Rock")
+            if st.button("🎧 Open Prediction & Analysis", type="primary", use_container_width=True):
+                st.session_state["_requested_page"] = "Prediction & Analysis"
+                st.rerun()
 
-        st.markdown("""
-        ### Welcome!
-        This platform delivers deep audio understanding to classify music into 10 target genres:
-        **Blues, Classical, Country, Disco, Hiphop, Jazz, Metal, Pop, Reggae, and Rock**.
-
-        #### ✨ Core System Capabilities:
-        1. **Leakage-Safe Deep Learning**: Powered by a 4-block CNN + Bidirectional LSTM + Self-Attention model trained strictly on song-level splits.
-        2. **Multi-Chunk Temporal Aggregation**: Slices full tracks into rolling 4-second windows with 2-second overlap for high-confidence predictions.
-        3. **Explainable AI (Grad-CAM)**: Visualizes the time-frequency spectrogram regions that influenced the model's decision.
-        4. **Interactive Dashboard**: Waveforms, log Mel-spectrograms, chunk trajectories, and performance metrics.
-
-        #### 🚀 Getting Started:
-        Navigate to **Prediction & Analysis** in the sidebar to upload an MP3 or WAV file and inspect its acoustic signature!
-        """)
+        st.markdown(
+            """
+            <style>
+              .music-hero { padding: 1.5rem 1.7rem; margin: .2rem 0 1.5rem; border: 1px solid #2b415b; border-radius: 20px; background: linear-gradient(115deg, rgba(29,185,84,.16), rgba(20,34,54,.95) 48%, rgba(24,38,59,.82)); }
+              .music-eyebrow { color: #59df8a; font-size: .75rem; font-weight: 800; letter-spacing: .16em; margin-bottom: .7rem; }
+              .music-hero h1 { font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.08; margin: 0 0 .8rem; color: #f8fafc; }
+              .music-hero p { max-width: 760px; color: #c3d0df; font-size: 1.05rem; margin: 0; line-height: 1.65; }
+              .music-panel { padding: 1rem 1.1rem; margin-top: .8rem; border: 1px solid #263449; border-radius: 14px; background: rgba(18,28,45,.78); }
+              .music-panel h3 { margin: 0 0 .4rem; color: #f8fafc; }
+              .music-panel p, .music-feature p { color: #b7c4d5; font-size: .93rem; line-height: 1.55; margin: .25rem 0 0; }
+              .music-feature { display: flex; gap: .8rem; align-items: flex-start; padding: .9rem 0; border-bottom: 1px solid #263449; }
+              .music-feature:last-child { border-bottom: 0; }
+              .music-feature-icon { flex: 0 0 2.35rem; height: 2.35rem; display: grid; place-items: center; border-radius: 10px; background: rgba(29,185,84,.13); color: #59df8a; font-size: 1.35rem; }
+              .music-feature strong { color: #f8fafc; }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # -----------------------------------------------------
     # PREDICTION & ANALYSIS PAGE
