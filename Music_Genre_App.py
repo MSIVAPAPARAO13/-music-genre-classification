@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 import streamlit as st
 import tensorflow as tf
 import numpy as np
@@ -417,6 +418,32 @@ def render_ui():
         layout="wide"
     )
 
+    # Consistent, lightweight visual polish shared across all pages.
+    st.markdown("""
+    <style>
+      :root { --music-green: #1DB954; --music-bg: #0b1220; --music-panel: #121c2d; --music-border: #263449; }
+      .stApp { background: radial-gradient(ellipse at top left, #15243a 0%, #0b1220 52%, #0a101b 100%); }
+      .block-container { max-width: 1400px; padding-top: 1.8rem; padding-bottom: 3rem; }
+      h1, h2, h3 { letter-spacing: -0.025em; }
+      h1 { font-weight: 800 !important; }
+      [data-testid="stSidebar"] { background: #0a111d; border-right: 1px solid var(--music-border); }
+      [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #f8fafc; }
+      div[data-testid="stMetric"] { background: linear-gradient(145deg, #172338, #111a29); border: 1px solid var(--music-border); border-radius: 14px; padding: 14px 16px; }
+      div[data-testid="stMetric"] label { color: #aab8ca !important; }
+      div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #f8fafc; }
+      .stButton > button { border-radius: 10px; min-height: 2.8rem; font-weight: 650; transition: transform .15s ease, border-color .15s ease; }
+      .stButton > button:hover { transform: translateY(-1px); border-color: var(--music-green); }
+      .stButton > button[kind="primary"] { background: var(--music-green); color: #07110a; border: 1px solid var(--music-green); }
+      div[data-testid="stFileUploader"] { background: rgba(18, 28, 45, .72); border: 1px dashed #3b526e; border-radius: 16px; padding: 12px; }
+      div[data-testid="stTabs"] button[role="tab"] { border-radius: 9px 9px 0 0; font-weight: 600; }
+      div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom-color: var(--music-green) !important; color: var(--music-green) !important; }
+      div[data-testid="stDataFrame"], div[data-testid="stTable"] { border: 1px solid var(--music-border); border-radius: 12px; overflow: hidden; }
+      div[data-testid="stAlert"] { border-radius: 12px; }
+      hr { border-color: var(--music-border); }
+      @media (max-width: 768px) { .block-container { padding-left: 1rem; padding-right: 1rem; } h1 { font-size: 1.8rem !important; } }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.sidebar.title("🎵 Navigation")
     app_mode = st.sidebar.selectbox(
         "Select Page",
@@ -467,8 +494,24 @@ def render_ui():
         st.caption(f"Currently Active Model: **{selected_model_label}**")
 
         test_audio = st.file_uploader(
-            "Upload an Audio File (MP3 or WAV)", type=["mp3", "wav"]
+            "Upload an Audio File (MP3 or WAV)", type=["mp3", "wav"],
+            help="Upload a music clip at least 4 seconds long. Analysis runs locally in this app session."
         )
+
+        # Clear old results whenever the uploaded file or active model changes. Without this,
+        # Streamlit reruns could show predictions from a previous track beside a new upload.
+        current_analysis_key = None
+        if test_audio is not None:
+            current_analysis_key = hashlib.sha256(test_audio.getvalue()).hexdigest() + "|" + active_model_path
+        previous_analysis_key = st.session_state.get("_analysis_input_key")
+        if current_analysis_key != previous_analysis_key:
+            st.session_state["analysis_ready"] = False
+            for result_key in (
+                "X_test", "raw_wave", "sr", "predicted_idx", "top_genre",
+                "top_predictions", "mean_probabilities", "chunk_details"
+            ):
+                st.session_state.pop(result_key, None)
+            st.session_state["_analysis_input_key"] = current_analysis_key
 
         if test_audio is not None:
             # Metadata & Audio player row
