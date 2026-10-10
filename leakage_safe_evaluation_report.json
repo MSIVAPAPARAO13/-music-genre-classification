@@ -1,0 +1,230 @@
+{
+  "evaluation_strategy": "Held-out Song-Level Evaluation (Zero Data Leakage)",
+  "hardware": "Intel 16-Core CPU (AVX2/oneDNN)",
+  "training_duration_seconds": 6672.71,
+  "track_counts": {
+    "test_tracks": 150,
+    "test_chunks": 2100
+  },
+  "track_level_metrics": {
+    "accuracy": 0.8133,
+    "macro_precision": 0.8234,
+    "macro_recall": 0.8133,
+    "macro_f1": 0.8093
+  },
+  "chunk_level_metrics": {
+    "accuracy": 0.7471,
+    "macro_precision": 0.7643,
+    "macro_recall": 0.7471,
+    "macro_f1": 0.7457
+  },
+  "per_class_classification_report": {
+    "blues": {
+      "precision": 0.8666666666666667,
+      "recall": 0.8666666666666667,
+      "f1-score": 0.8666666666666667,
+      "support": 15.0
+    },
+    "classical": {
+      "precision": 0.9333333333333333,
+      "recall": 0.9333333333333333,
+      "f1-score": 0.9333333333333333,
+      "support": 15.0
+    },
+    "country": {
+      "precision": 0.6923076923076923,
+      "recall": 0.6,
+      "f1-score": 0.6428571428571429,
+      "support": 15.0
+    },
+    "disco": {
+      "precision": 0.75,
+      "recall": 1.0,
+      "f1-score": 0.8571428571428571,
+      "support": 15.0
+    },
+    "hiphop": {
+      "precision": 1.0,
+      "recall": 0.8,
+      "f1-score": 0.8888888888888888,
+      "support": 15.0
+    },
+    "jazz": {
+      "precision": 0.6666666666666666,
+      "recall": 0.9333333333333333,
+      "f1-score": 0.7777777777777778,
+      "support": 15.0
+    },
+    "metal": {
+      "precision": 0.8823529411764706,
+      "recall": 1.0,
+      "f1-score": 0.9375,
+      "support": 15.0
+    },
+    "pop": {
+      "precision": 0.8,
+      "recall": 0.5333333333333333,
+      "f1-score": 0.64,
+      "support": 15.0
+    },
+    "reggae": {
+      "precision": 1.0,
+      "recall": 0.8666666666666667,
+      "f1-score": 0.9285714285714286,
+      "support": 15.0
+    },
+    "rock": {
+      "precision": 0.6428571428571429,
+      "recall": 0.6,
+      "f1-score": 0.6206896551724138,
+      "support": 15.0
+    },
+    "accuracy": 0.8133333333333334,
+    "macro avg": {
+      "precision": 0.8234184443007972,
+      "recall": 0.8133333333333332,
+      "f1-score": 0.8093427750410509,
+      "support": 150.0
+    },
+    "weighted avg": {
+      "precision": 0.8234184443007972,
+      "recall": 0.8133333333333334,
+      "f1-score": 0.8093427750410509,
+      "support": 150.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      13,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      9,
+      1,
+      0,
+      3,
+      0,
+      0,
+      0,
+      2
+    ],
+    [
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      12,
+      0,
+      1,
+      2,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      14,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      3,
+      2,
+      0,
+      1,
+      0,
+      8,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      13,
+      1
+    ],
+    [
+      2,
+      0,
+      1,
+      2,
+      0,
+      0,
+      1,
+      0,
+      0,
+      9
+    ]
+  ],
+  "genre_labels": [
+    "blues",
+    "classical",
+    "country",
+    "disco",
+    "hiphop",
+    "jazz",
+    "metal",
+    "pop",
+    "reggae",
+    "rock"
+  ]
+}

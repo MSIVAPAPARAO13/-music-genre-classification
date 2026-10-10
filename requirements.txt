@@ -1,9 +1,13 @@
-tensorflow
-librosa
-matplotlib
-numpy
-pandas
-scikit-learn
-ipython
-seaborn
-streamlit
+# Production Web Application & Inference
+streamlit>=1.35.0
+tensorflow>=2.16.1
+keras>=3.3.0
+librosa>=0.10.1
+soundfile>=0.12.1
+numpy>=1.26.4
+
+# Metrics, Evaluation & Testing
+scikit-learn>=1.4.2
+matplotlib>=3.8.4
+seaborn>=0.13.0
+pytest>=8.1.0

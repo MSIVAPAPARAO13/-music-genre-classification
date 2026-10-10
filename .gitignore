@@ -5,6 +5,7 @@ Data/
 
 # Jupyter Notebook & Python essentials
 .ipynb_checkpoints/
+.pytest_cache/
 __pycache__/
 *.py[cod]
 
