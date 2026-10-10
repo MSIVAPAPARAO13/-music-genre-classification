@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 import streamlit as st
 import tensorflow as tf
 import numpy as np
@@ -417,10 +418,44 @@ def render_ui():
         layout="wide"
     )
 
+    # Consistent, lightweight visual polish shared across all pages.
+    st.markdown("""
+    <style>
+      :root { --music-green: #1DB954; --music-bg: #0b1220; --music-panel: #121c2d; --music-border: #263449; }
+      .stApp { background: radial-gradient(ellipse at top left, #15243a 0%, #0b1220 52%, #0a101b 100%); }
+      .block-container { max-width: 1400px; padding-top: 1.8rem; padding-bottom: 3rem; }
+      h1, h2, h3 { letter-spacing: -0.025em; }
+      h1 { font-weight: 800 !important; }
+      [data-testid="stSidebar"] { background: #0a111d; border-right: 1px solid var(--music-border); }
+      [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #f8fafc; }
+      div[data-testid="stMetric"] { background: linear-gradient(145deg, #172338, #111a29); border: 1px solid var(--music-border); border-radius: 14px; padding: 14px 16px; }
+      div[data-testid="stMetric"] label { color: #aab8ca !important; }
+      div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #f8fafc; }
+      .stButton > button { border-radius: 10px; min-height: 2.8rem; font-weight: 650; transition: transform .15s ease, border-color .15s ease; }
+      .stButton > button:hover { transform: translateY(-1px); border-color: var(--music-green); }
+      .stButton > button[kind="primary"] { background: var(--music-green); color: #07110a; border: 1px solid var(--music-green); }
+      div[data-testid="stFileUploader"] { background: rgba(18, 28, 45, .72); border: 1px dashed #3b526e; border-radius: 16px; padding: 12px; }
+      div[data-testid="stTabs"] button[role="tab"] { border-radius: 9px 9px 0 0; font-weight: 600; }
+      div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom-color: var(--music-green) !important; color: var(--music-green) !important; }
+      div[data-testid="stDataFrame"], div[data-testid="stTable"] { border: 1px solid var(--music-border); border-radius: 12px; overflow: hidden; }
+      div[data-testid="stAlert"] { border-radius: 12px; }
+      hr { border-color: var(--music-border); }
+      @media (max-width: 768px) { .block-container { padding-left: 1rem; padding-right: 1rem; } h1 { font-size: 1.8rem !important; } }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.sidebar.title("🎵 Navigation")
+    page_options = ["Home", "Prediction & Analysis", "Model Performance", "About"]
+    requested_page = st.session_state.pop("_requested_page", None)
+    if requested_page in page_options:
+        # Remove the prior widget selection so the requested destination takes effect.
+        st.session_state.pop("app_mode", None)
+    page_index = page_options.index(requested_page) if requested_page in page_options else 0
     app_mode = st.sidebar.selectbox(
         "Select Page",
-        ["Home", "Prediction & Analysis", "Model Performance", "About"]
+        page_options,
+        index=page_index,
+        key="app_mode"
     )
 
     st.sidebar.markdown("---")
@@ -437,27 +472,74 @@ def render_ui():
     # HOME PAGE
     # -----------------------------------------------------
     if app_mode == "Home":
-        st.title("🎧 Music Genre Classification System")
-        st.subheader("Deep Audio Analysis using a Leakage-Safe Hybrid CRNN")
+        st.markdown(
+            """
+            <div class="music-hero">
+              <div class="music-eyebrow">DEEP LEARNING · AUDIO INTELLIGENCE</div>
+              <h1>Discover the genre behind your sound.</h1>
+              <p>Upload a track, explore its acoustic fingerprint, and see how a hybrid CNN–BiLSTM–Attention model classifies music across ten genres.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        image_path = os.path.join(BASE_DIR, "Images", "home.jpg")
-        if os.path.exists(image_path):
-            st.image(image_path, use_container_width=True)
+        hero_cols = st.columns([1.15, 0.85], gap="large")
+        with hero_cols[0]:
+            image_path = os.path.join(BASE_DIR, "Images", "home.jpg")
+            if os.path.exists(image_path):
+                st.image(image_path, use_container_width=True)
+            st.markdown(
+                """
+                <div class="music-panel">
+                  <h3>Explore your audio</h3>
+                  <p>Start with an MP3 or WAV file that is at least four seconds long. The app resamples it to 22,050 Hz, analyzes overlapping four-second windows, and combines their model scores.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with hero_cols[1]:
+            st.markdown("#### What you can explore")
+            st.markdown(
+                """
+                <div class="music-feature">
+                  <div class="music-feature-icon">♫</div>
+                  <div><strong>Genre prediction</strong><p>Top-three rankings and scores for all ten genres.</p></div>
+                </div>
+                <div class="music-feature">
+                  <div class="music-feature-icon">〰</div>
+                  <div><strong>Audio visualization</strong><p>Waveform, mel-spectrogram, and chunk-by-chunk results.</p></div>
+                </div>
+                <div class="music-feature">
+                  <div class="music-feature-icon">◎</div>
+                  <div><strong>Model insights</strong><p>Grad-CAM visualization and held-out GTZAN evaluation metrics.</p></div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.markdown("#### Genres supported")
+            st.caption("Blues · Classical · Country · Disco · Hip-hop · Jazz · Metal · Pop · Reggae · Rock")
+            if st.button("🎧 Open Prediction & Analysis", type="primary", use_container_width=True):
+                st.session_state["_requested_page"] = "Prediction & Analysis"
+                st.rerun()
 
-        st.markdown("""
-        ### Welcome!
-        This platform delivers deep audio understanding to classify music into 10 target genres:
-        **Blues, Classical, Country, Disco, Hiphop, Jazz, Metal, Pop, Reggae, and Rock**.
-
-        #### ✨ Core System Capabilities:
-        1. **Leakage-Safe Deep Learning**: Powered by a 4-block CNN + Bidirectional LSTM + Self-Attention model trained strictly on song-level splits.
-        2. **Multi-Chunk Temporal Aggregation**: Slices full tracks into rolling 4-second windows with 2-second overlap for high-confidence predictions.
-        3. **Explainable AI (Grad-CAM)**: Visualizes the time-frequency spectrogram regions that influenced the model's decision.
-        4. **Interactive Dashboard**: Waveforms, log Mel-spectrograms, chunk trajectories, and performance metrics.
-
-        #### 🚀 Getting Started:
-        Navigate to **Prediction & Analysis** in the sidebar to upload an MP3 or WAV file and inspect its acoustic signature!
-        """)
+        st.markdown(
+            """
+            <style>
+              .music-hero { padding: 1.5rem 1.7rem; margin: .2rem 0 1.5rem; border: 1px solid #2b415b; border-radius: 20px; background: linear-gradient(115deg, rgba(29,185,84,.16), rgba(20,34,54,.95) 48%, rgba(24,38,59,.82)); }
+              .music-eyebrow { color: #59df8a; font-size: .75rem; font-weight: 800; letter-spacing: .16em; margin-bottom: .7rem; }
+              .music-hero h1 { font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.08; margin: 0 0 .8rem; color: #f8fafc; }
+              .music-hero p { max-width: 760px; color: #c3d0df; font-size: 1.05rem; margin: 0; line-height: 1.65; }
+              .music-panel { padding: 1rem 1.1rem; margin-top: .8rem; border: 1px solid #263449; border-radius: 14px; background: rgba(18,28,45,.78); }
+              .music-panel h3 { margin: 0 0 .4rem; color: #f8fafc; }
+              .music-panel p, .music-feature p { color: #b7c4d5; font-size: .93rem; line-height: 1.55; margin: .25rem 0 0; }
+              .music-feature { display: flex; gap: .8rem; align-items: flex-start; padding: .9rem 0; border-bottom: 1px solid #263449; }
+              .music-feature:last-child { border-bottom: 0; }
+              .music-feature-icon { flex: 0 0 2.35rem; height: 2.35rem; display: grid; place-items: center; border-radius: 10px; background: rgba(29,185,84,.13); color: #59df8a; font-size: 1.35rem; }
+              .music-feature strong { color: #f8fafc; }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # -----------------------------------------------------
     # PREDICTION & ANALYSIS PAGE
@@ -467,8 +549,24 @@ def render_ui():
         st.caption(f"Currently Active Model: **{selected_model_label}**")
 
         test_audio = st.file_uploader(
-            "Upload an Audio File (MP3 or WAV)", type=["mp3", "wav"]
+            "Upload an Audio File (MP3 or WAV)", type=["mp3", "wav"],
+            help="Upload a music clip at least 4 seconds long. Analysis runs locally in this app session."
         )
+
+        # Clear old results whenever the uploaded file or active model changes. Without this,
+        # Streamlit reruns could show predictions from a previous track beside a new upload.
+        current_analysis_key = None
+        if test_audio is not None:
+            current_analysis_key = hashlib.sha256(test_audio.getvalue()).hexdigest() + "|" + active_model_path
+        previous_analysis_key = st.session_state.get("_analysis_input_key")
+        if current_analysis_key != previous_analysis_key:
+            st.session_state["analysis_ready"] = False
+            for result_key in (
+                "X_test", "raw_wave", "sr", "predicted_idx", "top_genre",
+                "top_predictions", "mean_probabilities", "chunk_details"
+            ):
+                st.session_state.pop(result_key, None)
+            st.session_state["_analysis_input_key"] = current_analysis_key
 
         if test_audio is not None:
             # Metadata & Audio player row
@@ -773,4 +871,4 @@ def render_ui():
 
 
 if __name__ == "__main__":
-    render_ui()
+    render_ui()
