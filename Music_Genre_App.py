@@ -447,6 +447,9 @@ def render_ui():
     st.sidebar.title("🎵 Navigation")
     page_options = ["Home", "Prediction & Analysis", "Model Performance", "About"]
     requested_page = st.session_state.pop("_requested_page", None)
+    if requested_page in page_options:
+        # Remove the prior widget selection so the requested destination takes effect.
+        st.session_state.pop("app_mode", None)
     page_index = page_options.index(requested_page) if requested_page in page_options else 0
     app_mode = st.sidebar.selectbox(
         "Select Page",
