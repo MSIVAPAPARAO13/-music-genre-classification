@@ -445,9 +445,14 @@ def render_ui():
     """, unsafe_allow_html=True)
 
     st.sidebar.title("🎵 Navigation")
+    page_options = ["Home", "Prediction & Analysis", "Model Performance", "About"]
+    requested_page = st.session_state.pop("_requested_page", None)
+    page_index = page_options.index(requested_page) if requested_page in page_options else 0
     app_mode = st.sidebar.selectbox(
         "Select Page",
-        ["Home", "Prediction & Analysis", "Model Performance", "About"]
+        page_options,
+        index=page_index,
+        key="app_mode"
     )
 
     st.sidebar.markdown("---")
