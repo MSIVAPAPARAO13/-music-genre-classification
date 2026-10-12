@@ -789,6 +789,19 @@ GENRE_ICONS = {
 
 
 # ---------------------------------------------------------
+# Callback Helpers for Safe Session State Navigation
+# ---------------------------------------------------------
+def set_nav_page(page_name="🎧 Prediction & Analysis"):
+    """Callback executed before widgets instantiate to prevent StreamlitWidgetAlreadyInstantiatedError."""
+    st.session_state["main_nav_select"] = page_name
+
+
+def reset_analysis_callback():
+    """Callback to safely clear current audio analysis state."""
+    st.session_state["analysis_ready"] = False
+
+
+# ---------------------------------------------------------
 # Streamlit User Interface — Premium Edition
 # ---------------------------------------------------------
 def render_ui():
@@ -896,9 +909,13 @@ def render_ui():
 
         col_cta1, col_cta2 = st.columns([1.5, 3])
         with col_cta1:
-            if st.button("🎧 Analyze Your Music Now", type="primary", key="hero_cta_btn"):
-                st.session_state["main_nav_select"] = "🎧 Prediction & Analysis"
-                st.rerun()
+            st.button(
+                "🎧 Analyze Your Music Now",
+                type="primary",
+                key="hero_cta_btn",
+                on_click=set_nav_page,
+                args=("🎧 Prediction & Analysis",)
+            )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -954,9 +971,13 @@ def render_ui():
         st.markdown("<br><br>", unsafe_allow_html=True)
         cta_c1, cta_c2, cta_c3 = st.columns([1, 1.6, 1])
         with cta_c2:
-            if st.button("🚀  Start Audio Analysis & Try Examples ↗", type="primary", key="bottom_cta_btn"):
-                st.session_state["main_nav_select"] = "🎧 Prediction & Analysis"
-                st.rerun()
+            st.button(
+                "🚀  Start Audio Analysis & Try Examples ↗",
+                type="primary",
+                key="bottom_cta_btn",
+                on_click=set_nav_page,
+                args=("🎧 Prediction & Analysis",)
+            )
 
     # ====================================================
     # PREDICTION & ANALYSIS PAGE
@@ -1057,10 +1078,7 @@ def render_ui():
             with col_act1:
                 run_btn = st.button(f"🚀  Analyse '{audio_name}' & Predict Genre", type="primary")
             with col_act2:
-                reset_btn = st.button("🔄  Reset Analysis")
-                if reset_btn:
-                    st.session_state["analysis_ready"] = False
-                    st.rerun()
+                st.button("🔄  Reset Analysis", key="reset_analysis_btn", on_click=reset_analysis_callback)
 
             if run_btn:
                 with st.spinner("Extracting Mel-spectrograms, chunking audio, and running CRNN inference..."):
