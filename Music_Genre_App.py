@@ -424,17 +424,21 @@ def plot_mel_spectrogram(audio_data, sr):
     fig, ax = plt.subplots(figsize=(10, 3.2), facecolor='#0e1117')
     ax.set_facecolor('#0e1117')
     melspec = librosa.feature.melspectrogram(y=audio_data, sr=sr, n_fft=2048, hop_length=512, n_mels=128)
-    log_melspec = librosa.power_to_db(melspec, ref=np.max)
-    duration = len(audio_data) / sr
+    ref_val = float(np.max(melspec)) if np.max(melspec) > 0 else 1.0
+    log_melspec = librosa.power_to_db(melspec, ref=ref_val)
+    duration = len(audio_data) / sr if sr > 0 else 0
 
     im = ax.imshow(
         log_melspec, aspect='auto', origin='lower',
         cmap='magma', extent=[0, duration, 0, sr // 2]
     )
     cbar = plt.colorbar(im, ax=ax, format='%+2.0f dB')
-    cbar.ax.yaxis.set_tick_params(color='#b0b0b0')
-    plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#b0b0b0')
-    cbar.outline.set_edgecolor('#333333')
+    cbar.ax.tick_params(colors='#b0b0b0')
+    if hasattr(cbar, 'outline') and cbar.outline is not None:
+        try:
+            cbar.outline.set_edgecolor('#333333')
+        except Exception:
+            pass
 
     ax.set_title("Log Mel-Spectrogram (Time vs. Frequency Energy)", color='white', fontsize=12, pad=10)
     ax.set_xlabel("Time (seconds)", color='#b0b0b0', fontsize=10)
@@ -450,6 +454,9 @@ def plot_genre_scores_chart(mean_probabilities, predicted_idx):
     """Horizontal bar chart showing model confidence scores across all 10 genres."""
     fig, ax = plt.subplots(figsize=(9, 4.2), facecolor='#0e1117')
     ax.set_facecolor('#0e1117')
+
+    # Ensure 1D numpy array and sanitize NaNs
+    mean_probabilities = np.nan_to_num(np.asarray(mean_probabilities).flatten(), nan=0.0)
 
     # Sort descending
     sorted_order = np.argsort(mean_probabilities)
@@ -499,9 +506,12 @@ def plot_gradcam_overlay(chunk_spec, cam_heatmap, genre_name, chunk_num=1, time_
     im = ax.imshow(cam_heatmap, aspect='auto', origin='lower', cmap='jet', alpha=0.55, extent=extent)
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.ax.yaxis.set_tick_params(color='#b0b0b0')
-    plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#b0b0b0')
-    cbar.outline.set_edgecolor('#333333')
+    cbar.ax.tick_params(colors='#b0b0b0')
+    if hasattr(cbar, 'outline') and cbar.outline is not None:
+        try:
+            cbar.outline.set_edgecolor('#333333')
+        except Exception:
+            pass
     cbar.set_label("Saliency Weight [0.0 – 1.0]", color='#b0b0b0', fontsize=9)
 
     ax.set_title(
@@ -1196,7 +1206,8 @@ def render_ui():
             col_player, col_meta = st.columns([1, 1], gap="large")
             with col_player:
                 st.markdown('<div class="section-label">Audio Playback</div>', unsafe_allow_html=True)
-                st.audio(audio_bytes, format="audio/mp3")
+                audio_mime = "audio/wav" if audio_name.lower().endswith(".wav") else "audio/mp3"
+                st.audio(audio_bytes, format=audio_mime)
 
             with col_meta:
                 st.markdown('<div class="section-label">Track Metadata</div>', unsafe_allow_html=True)
