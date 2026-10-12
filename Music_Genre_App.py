@@ -815,18 +815,15 @@ def render_ui():
         """, unsafe_allow_html=True)
 
         NAV_OPTIONS = ["🏠 Home", "🎧 Prediction & Analysis", "📊 Model Performance", "ℹ️ About"]
-        if "nav_page" not in st.session_state or st.session_state["nav_page"] not in NAV_OPTIONS:
-            st.session_state["nav_page"] = NAV_OPTIONS[0]
+        if "main_nav_select" not in st.session_state or st.session_state["main_nav_select"] not in NAV_OPTIONS:
+            st.session_state["main_nav_select"] = NAV_OPTIONS[0]
 
-        default_nav_idx = NAV_OPTIONS.index(st.session_state["nav_page"])
         app_mode = st.selectbox(
             "Navigate to",
             NAV_OPTIONS,
-            index=default_nav_idx,
             label_visibility="collapsed",
             key="main_nav_select"
         )
-        st.session_state["nav_page"] = app_mode
 
         st.markdown("---")
         st.markdown('<div class="section-label">Model Configuration</div>', unsafe_allow_html=True)
@@ -900,7 +897,7 @@ def render_ui():
         col_cta1, col_cta2 = st.columns([1.5, 3])
         with col_cta1:
             if st.button("🎧 Analyze Your Music Now", type="primary", key="hero_cta_btn"):
-                st.session_state["nav_page"] = "🎧 Prediction & Analysis"
+                st.session_state["main_nav_select"] = "🎧 Prediction & Analysis"
                 st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -958,7 +955,7 @@ def render_ui():
         cta_c1, cta_c2, cta_c3 = st.columns([1, 1.6, 1])
         with cta_c2:
             if st.button("🚀  Start Audio Analysis & Try Examples ↗", type="primary", key="bottom_cta_btn"):
-                st.session_state["nav_page"] = "🎧 Prediction & Analysis"
+                st.session_state["main_nav_select"] = "🎧 Prediction & Analysis"
                 st.rerun()
 
     # ====================================================
