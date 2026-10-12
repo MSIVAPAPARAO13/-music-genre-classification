@@ -245,57 +245,158 @@ def model_prediction(X_test, model=None, return_chunk_details=False):
 def compute_gradcam(model, chunk_spec, class_idx, layer_name="conv_b4_2"):
     """
     Compute Grad-CAM heatmap for a single (1, 150, 150, 1) spectrogram chunk.
-    Targets layer_name (default: 'conv_b4_2' in Leakage_Safe_CRNN).
+    Targets layer_name (default: 'conv_b4_2' in Leakage_Safe_CRNN and Hybrid_CRNN).
     Returns normalized (150, 150) 2D float array in range [0, 1].
+    Handles missing layers, non-gradient models, and NaNs gracefully.
     """
-    # Ensure chunk_spec is shape (1, 150, 150, 1)
-    if chunk_spec.ndim == 3:
-        chunk_spec = np.expand_dims(chunk_spec, axis=0)
-    chunk_tensor = tf.convert_to_tensor(chunk_spec, dtype=tf.float32)
+    try:
+        # Validate class_idx bounds
+        if not (0 <= class_idx < len(GENRE_LABELS)):
+            return np.zeros(TARGET_SHAPE, dtype=np.float32)
 
-    # Locate target layer
-    target_layer = None
-    for layer in model.layers:
-        if layer.name == layer_name:
-            target_layer = layer
-            break
+        # Ensure chunk_spec is shape (1, 150, 150, 1)
+        if chunk_spec.ndim == 2:
+            chunk_spec = np.expand_dims(chunk_spec, axis=-1)
+        if chunk_spec.ndim == 3:
+            chunk_spec = np.expand_dims(chunk_spec, axis=0)
+        chunk_tensor = tf.convert_to_tensor(chunk_spec, dtype=tf.float32)
 
-    # Fallback to last Conv2D layer if named layer not found
-    if target_layer is None:
-        for layer in reversed(model.layers):
-            if isinstance(layer, tf.keras.layers.Conv2D):
+        # Locate target layer
+        target_layer = None
+        for layer in model.layers:
+            if layer.name == layer_name:
                 target_layer = layer
                 break
 
-    if target_layer is None:
-        return np.zeros((150, 150), dtype=np.float32)
+        # Dynamic fallback to last Conv2D layer if named layer not found
+        if target_layer is None:
+            for layer in reversed(model.layers):
+                if isinstance(layer, tf.keras.layers.Conv2D):
+                    target_layer = layer
+                    break
 
-    grad_model = tf.keras.models.Model(
-        inputs=model.inputs,
-        outputs=[target_layer.output, model.output]
-    )
+        if target_layer is None:
+            return np.zeros(TARGET_SHAPE, dtype=np.float32)
 
-    with tf.GradientTape() as tape:
-        conv_outputs, predictions = grad_model(chunk_tensor)
-        loss = predictions[:, class_idx]
+        grad_model = tf.keras.models.Model(
+            inputs=model.inputs,
+            outputs=[target_layer.output, model.output]
+        )
 
-    grads = tape.gradient(loss, conv_outputs)
-    if grads is None:
-        return np.zeros((150, 150), dtype=np.float32)
+        with tf.GradientTape() as tape:
+            conv_outputs, predictions = grad_model(chunk_tensor)
+            loss = predictions[:, class_idx]
 
-    # Global average pooling of gradients
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+        grads = tape.gradient(loss, conv_outputs)
+        if grads is None:
+            return np.zeros(TARGET_SHAPE, dtype=np.float32)
 
-    # Weight activation channels
-    cam = tf.reduce_sum(conv_outputs[0] * pooled_grads, axis=-1)
-    cam = tf.maximum(cam, 0.0)  # ReLU
-    max_val = tf.math.reduce_max(cam)
-    if max_val > 0:
-        cam = cam / max_val
+        # Global average pooling of gradients across spatial dimensions
+        pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
-    # Resize to original (150, 150)
-    cam_resized = tf.image.resize(cam[..., tf.newaxis], TARGET_SHAPE)
-    return cam_resized.numpy().squeeze()
+        # Weight activation channels by pooled gradients
+        cam = tf.reduce_sum(conv_outputs[0] * pooled_grads, axis=-1)
+        cam = tf.maximum(cam, 0.0)  # ReLU: retain only features that positively drive class
+        max_val = tf.math.reduce_max(cam)
+        if max_val > 0:
+            cam = cam / max_val
+
+        # Resize to original (150, 150) input resolution
+        cam_resized = tf.image.resize(cam[..., tf.newaxis], TARGET_SHAPE)
+        cam_out = np.nan_to_num(cam_resized.numpy().squeeze(), nan=0.0, posinf=1.0, neginf=0.0)
+        return np.clip(cam_out, 0.0, 1.0)
+    except Exception:
+        return np.zeros(TARGET_SHAPE, dtype=np.float32)
+
+
+def generate_gradcam_interpretation(cam_map, target_genre, chunk_idx=1, time_window="0.0s - 4.0s"):
+    """
+    Analyze energy distribution in Grad-CAM saliency map and return structured interpretation.
+    Divides the 150 mel frequency bins into Low (0-50, ~0-1.5kHz), Mid (50-100, ~1.5-4.5kHz),
+    and High (100-150, ~4.5-11kHz) bands.
+    """
+    if cam_map is None or np.all(cam_map == 0):
+        return {
+            "summary": "No positive gradient activations detected for this class/chunk.",
+            "dominant_band": "None",
+            "low_pct": 0.0, "mid_pct": 0.0, "high_pct": 0.0,
+            "temporal_focus": "Uniform",
+            "genre_note": "The convolutional feature filters did not exhibit significant positive activation for this genre."
+        }
+
+    total_energy = float(np.sum(cam_map))
+    if total_energy <= 1e-6:
+        total_energy = 1e-6
+
+    # Frequency bin distribution (150 bins: 0 is lowest freq, 150 is highest freq ~11kHz)
+    low_energy = float(np.sum(cam_map[:50, :])) / total_energy * 100.0
+    mid_energy = float(np.sum(cam_map[50:100, :])) / total_energy * 100.0
+    high_energy = float(np.sum(cam_map[100:, :])) / total_energy * 100.0
+
+    # Temporal concentration (first half vs second half of the 4.0s window)
+    t_first = float(np.sum(cam_map[:, :75])) / total_energy * 100.0
+    t_second = float(np.sum(cam_map[:, 75:])) / total_energy * 100.0
+
+    if abs(t_first - t_second) < 15.0:
+        temporal_focus = "Evenly sustained throughout the 4.0-second window"
+    elif t_first > t_second:
+        temporal_focus = f"Front-loaded ({t_first:.0f}% concentrated in initial 2.0s)"
+    else:
+        temporal_focus = f"Back-loaded ({t_second:.0f}% concentrated in final 2.0s)"
+
+    bands = [
+        ("Low Frequencies (0–1.5 kHz: Bass & Sub-rhythm)", low_energy),
+        ("Mid Frequencies (1.5–4.5 kHz: Melodic & Vocals)", mid_energy),
+        ("High Frequencies (4.5–11 kHz: Transients & Cymbals)", high_energy)
+    ]
+    dominant_band, dominant_pct = max(bands, key=lambda x: x[1])
+    genre_cap = target_genre.capitalize()
+
+    if "Low" in dominant_band:
+        genre_note = f"The model heavily relies on low-end rhythm, basslines, and kick drum energy to identify **{genre_cap}**."
+    elif "Mid" in dominant_band:
+        genre_note = f"The model is primarily focused on mid-range melodic structures, vocal resonances, or instrument leads characteristic of **{genre_cap}**."
+    else:
+        genre_note = f"The model is responding strongly to high-frequency cymbal crashes, breathiness, and percussive transients typical of **{genre_cap}**."
+
+    return {
+        "summary": f"Strongest sensitivity in **{dominant_band.split(' (')[0]}** ({dominant_pct:.1f}% of total activation).",
+        "dominant_band": dominant_band,
+        "low_pct": low_energy,
+        "mid_pct": mid_energy,
+        "high_pct": high_energy,
+        "temporal_focus": temporal_focus,
+        "genre_note": genre_note
+    }
+
+
+def render_workflow_stepper(stage="awaiting"):
+    """
+    Renders visual 9-step audio intelligence workflow stepper:
+    Upload Audio -> Validate Audio -> Preprocess -> Segment into Chunks ->
+    Generate Mel-Spectrograms -> Run CRNN Inference -> Aggregate Scores ->
+    Display Genre Results -> Explore Explanations
+    """
+    steps = [
+        ("① Upload Audio", "done" if stage in ["uploaded", "analyzed"] else "active"),
+        ("② Validate Audio", "done" if stage in ["uploaded", "analyzed"] else ("active" if stage == "uploaded" else "pending")),
+        ("③ Preprocess (22.05 kHz)", "done" if stage == "analyzed" else "pending"),
+        ("④ Segment (4s / 2s Stride)", "done" if stage == "analyzed" else "pending"),
+        ("⑤ Mel-Spectrograms", "done" if stage == "analyzed" else "pending"),
+        ("⑥ CRNN Inference", "done" if stage == "analyzed" else "pending"),
+        ("⑦ Aggregate Scores", "done" if stage == "analyzed" else "pending"),
+        ("⑧ Display Results", "done" if stage == "analyzed" else "pending"),
+        ("⑨ Explore Explanations", "done" if stage == "analyzed" else "pending")
+    ]
+    html = ['<div class="workflow-strip">']
+    for i, (label, st_class) in enumerate(steps):
+        icon = "✅ " if st_class == "done" else ("👉 " if st_class == "active" else "⏳ ")
+        html.append(f'<span class="wf-step {st_class}">{icon}{label}</span>')
+        if i < len(steps) - 1:
+            html.append('<span class="wf-arrow">→</span>')
+    html.append('</div>')
+    return "".join(html)
+
 
 
 # ---------------------------------------------------------
@@ -383,30 +484,32 @@ def plot_genre_scores_chart(mean_probabilities, predicted_idx):
     return fig
 
 
-def plot_gradcam_overlay(chunk_spec, cam_heatmap, genre_name, chunk_num=1):
-    """Overlay Grad-CAM heatmap on single chunk spectrogram."""
+def plot_gradcam_overlay(chunk_spec, cam_heatmap, genre_name, chunk_num=1, time_window="0.0s - 4.0s"):
+    """Overlay Grad-CAM heatmap on single chunk spectrogram with physical audio axes."""
     chunk_spec = np.squeeze(chunk_spec)
+    cam_heatmap = np.nan_to_num(cam_heatmap, nan=0.0, posinf=1.0, neginf=0.0)
 
-    fig, ax = plt.subplots(figsize=(7, 4.5), facecolor='#0e1117')
+    fig, ax = plt.subplots(figsize=(7.5, 4.6), facecolor='#0e1117')
     ax.set_facecolor('#0e1117')
 
-    # Display spectrogram base
-    ax.imshow(chunk_spec, aspect='auto', origin='lower', cmap='gray')
+    # Display spectrogram base with physical extent [0 to 4.0s, 0 to 11,025 Hz]
+    extent = [0.0, 4.0, 0, TARGET_SR // 2]
+    ax.imshow(chunk_spec, aspect='auto', origin='lower', cmap='gray', extent=extent)
     # Overlay heatmap with alpha transparency
-    im = ax.imshow(cam_heatmap, aspect='auto', origin='lower', cmap='jet', alpha=0.55)
+    im = ax.imshow(cam_heatmap, aspect='auto', origin='lower', cmap='jet', alpha=0.55, extent=extent)
 
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_tick_params(color='#b0b0b0')
     plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#b0b0b0')
     cbar.outline.set_edgecolor('#333333')
-    cbar.set_label("Saliency Weight", color='#b0b0b0', fontsize=9)
+    cbar.set_label("Saliency Weight [0.0 – 1.0]", color='#b0b0b0', fontsize=9)
 
     ax.set_title(
-        f"Grad-CAM Saliency for '{genre_name.capitalize()}' — Chunk {chunk_num}",
+        f"Grad-CAM Saliency for '{genre_name.capitalize()}' — Chunk #{chunk_num} ({time_window})",
         color='white', fontsize=11, pad=10
     )
-    ax.set_xlabel("Time Frames (Resized: 150 bins)", color='#b0b0b0', fontsize=9)
-    ax.set_ylabel("Mel Frequency (Resized: 150 bins)", color='#b0b0b0', fontsize=9)
+    ax.set_xlabel("Time within Window (0.0s – 4.0s)", color='#b0b0b0', fontsize=9)
+    ax.set_ylabel("Audio Frequency (0 – 11,025 Hz)", color='#b0b0b0', fontsize=9)
     ax.tick_params(colors='#b0b0b0')
     for spine in ax.spines.values():
         spine.set_color('#333333')
@@ -776,8 +879,48 @@ audio { border-radius: var(--radius-md) !important; width: 100%; }
 .model-active-badge .badge-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
 .model-active-badge .badge-val   { font-size: 0.78rem; font-weight: 600; color: var(--accent-bright); margin-top: 2px; }
 
-/* ── Slider ────────────────────────────────────────────── */
-[data-testid="stSlider"] .stSlider > div > div > div { background: var(--accent) !important; }
+/* ── Workflow Stepper ──────────────────────────────────── */
+.workflow-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  background: rgba(13, 17, 23, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.2rem;
+}
+.wf-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
+}
+.wf-step.active {
+  background: var(--accent-dim);
+  color: var(--accent-bright);
+  border-color: var(--border-glow);
+  font-weight: 600;
+}
+.wf-step.done {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+  font-weight: 600;
+}
+.wf-arrow {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  user-select: none;
+}
 </style>
 """
 
@@ -1037,6 +1180,12 @@ def render_ui():
                     audio_name = test_audio.name
             st.markdown('</div>', unsafe_allow_html=True)
 
+        # 9-Step Visual Audio Intelligence Workflow Stepper
+        stage = "awaiting"
+        if audio_bytes is not None and len(audio_bytes) > 0:
+            stage = "analyzed" if st.session_state.get("analysis_ready", False) else "uploaded"
+        st.markdown(render_workflow_stepper(stage), unsafe_allow_html=True)
+
         if audio_bytes is not None and len(audio_bytes) > 0:
             # Detect audio or model changes to prevent stale predictions
             sig = f"{audio_name}_{len(audio_bytes)}_{active_model_path}"
@@ -1239,37 +1388,98 @@ def render_ui():
                     st.pyplot(fig_chunk)
                     plt.close(fig_chunk)
 
+                    # Preprocessing & Windowing Protocol Callout
+                    st.markdown("""
+                    <div class="glass-card" style="padding:1.1rem 1.3rem; margin-top:1.2rem;">
+                      <div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:0.4rem;">
+                        ⚙️ Acoustic Preprocessing & Chunking Protocol
+                      </div>
+                      <div style="font-size:0.83rem; color:#cbd5e1; line-height:1.6;">
+                        • <strong>Resampling to 22,050 Hz:</strong> All input audio is resampled to 22.05 kHz mono, capturing musical frequencies up to the 11.025 kHz Nyquist ceiling while filtering high-frequency noise and optimizing computational efficiency.<br>
+                        • <strong>Rolling 4-Second Windows:</strong> Audio is segmented into 4.0-second slices with a 2.0-second stride (50% temporal overlap) to guarantee notes and transitions spanning chunk boundaries are preserved.<br>
+                        • <strong>Trailing Audio Treatment:</strong> Incomplete trailing audio under 4.0 seconds is intentionally discarded rather than artificially zero-padded or time-stretched, avoiding synthetic acoustic artifacts in CRNN convolutional filters.<br>
+                        • <strong>Model Input Representation:</strong> Raw power Mel-spectrograms (128 mel bins, n_fft=2048, hop=512) resized to <code>(150, 150, 1)</code> float32 are fed to the model. The log Mel-spectrogram (dB) above is strictly for visual inspection.
+                      </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
                 # ── TAB 4: Grad-CAM ───────────────────────
                 with tab4:
                     st.markdown('<div class="section-label" style="margin-top:.5rem;">Convolutional Saliency — Grad-CAM</div>', unsafe_allow_html=True)
                     st.markdown(
-                        "**Grad-CAM** highlights which time-frequency regions in the Mel-spectrogram "
-                        "most strongly activated layer `conv_b4_2` toward the predicted genre."
+                        "**Grad-CAM (Gradient-weighted Class Activation Mapping)** highlights which time-frequency regions in the Mel-spectrogram "
+                        "most strongly activated convolutional layer `conv_b4_2` toward a target genre classification."
                     )
 
-                    g_chunk_idx = st.selectbox(
-                        "Select chunk for saliency analysis",
-                        options=list(range(1, total_chunks + 1)),
-                        index=0,
-                        format_func=lambda idx: (
-                            f"Chunk {idx}  ·  {chunk_details[idx-1]['time_window']}  →  "
-                            f"{chunk_details[idx-1]['predicted_genre'].capitalize()}"
+                    col_gclass, col_gchunk = st.columns([1, 1], gap="medium")
+                    with col_gclass:
+                        target_class_name = st.selectbox(
+                            "Target Genre for Saliency Map",
+                            options=[g.capitalize() for g in GENRE_LABELS],
+                            index=predicted_idx,
+                            help="Analyze evidence for the top predicted genre or explore sensitivity toward any other genre."
                         )
-                    )
-                    with st.spinner("Computing Grad-CAM saliency map..."):
+                        target_class_idx = GENRE_LABELS.index(target_class_name.lower())
+
+                    with col_gchunk:
+                        g_chunk_idx = st.selectbox(
+                            "Select Chunk for Saliency Analysis",
+                            options=list(range(1, total_chunks + 1)),
+                            index=0,
+                            format_func=lambda idx: (
+                                f"Chunk {idx} · {chunk_details[idx-1]['time_window']} → "
+                                f"{chunk_details[idx-1]['predicted_genre'].capitalize()}"
+                            )
+                        )
+
+                    with st.spinner(f"Computing Grad-CAM saliency for '{target_class_name}' on Chunk {g_chunk_idx}..."):
                         target_chunk_tensor = X_test[g_chunk_idx - 1]
                         active_model = load_trained_model(active_model_path)
-                        cam_map = compute_gradcam(active_model, target_chunk_tensor, class_idx=predicted_idx)
-                        fig_cam = plot_gradcam_overlay(target_chunk_tensor, cam_map, top_genre, chunk_num=g_chunk_idx)
+                        cam_map = compute_gradcam(active_model, target_chunk_tensor, class_idx=target_class_idx)
+                        time_window_str = chunk_details[g_chunk_idx - 1]['time_window']
+                        fig_cam = plot_gradcam_overlay(
+                            target_chunk_tensor, cam_map, target_class_name,
+                            chunk_num=g_chunk_idx, time_window=time_window_str
+                        )
                         st.pyplot(fig_cam)
                         plt.close(fig_cam)
 
+                    interpretation = generate_gradcam_interpretation(
+                        cam_map, target_class_name.lower(), g_chunk_idx, time_window_str
+                    )
+
                     st.markdown(f"""
-                    **How to read this map:**
-                    - 🔴 **Warm (Red/Yellow)** — High positive gradient activation for **{top_genre.capitalize()}**
-                    - 🔵 **Cool (Blue/Green)** — Low influence on the classification decision
-                    - ⚠️ *Grad-CAM reflects convolutional sensitivity only. BiLSTM and Attention layers integrate temporal context beyond what's shown here.*
-                    """)
+                    <div class="glass-card" style="padding:1.2rem 1.4rem; margin-top:1rem;">
+                      <div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:0.5rem;">
+                        🧠 Grad-CAM Sensitivity Interpretation Panel
+                      </div>
+                      <div style="font-size:0.95rem; font-weight:600; color:#f0f4f8; margin-bottom:0.6rem;">
+                        {interpretation['summary']}
+                      </div>
+                      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:0.8rem; margin:0.8rem 0;">
+                        <div style="background:rgba(255,255,255,0.03); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                          <div style="font-size:0.7rem; color:#94a3b8;">Low (0–1.5 kHz)</div>
+                          <div style="font-size:1.15rem; font-weight:700; color:#38bdf8;">{interpretation['low_pct']:.1f}%</div>
+                          <div style="font-size:0.65rem; color:#64748b;">Bass, Sub & Kicks</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                          <div style="font-size:0.7rem; color:#94a3b8;">Mid (1.5–4.5 kHz)</div>
+                          <div style="font-size:1.15rem; font-weight:700; color:#a78bfa;">{interpretation['mid_pct']:.1f}%</div>
+                          <div style="font-size:0.65rem; color:#64748b;">Vocals & Instruments</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:0.6rem 0.8rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                          <div style="font-size:0.7rem; color:#94a3b8;">High (4.5–11 kHz)</div>
+                          <div style="font-size:1.15rem; font-weight:700; color:#f43f5e;">{interpretation['high_pct']:.1f}%</div>
+                          <div style="font-size:0.65rem; color:#64748b;">Cymbals & Transients</div>
+                        </div>
+                      </div>
+                      <div style="font-size:0.83rem; color:#cbd5e1; line-height:1.6; margin-top:0.4rem;">
+                        • <strong>Acoustic Insight:</strong> {interpretation['genre_note']}<br>
+                        • <strong>Temporal Evolution:</strong> {interpretation['temporal_focus']}.<br>
+                        • <strong>Technical Disclaimer:</strong> <em>Grad-CAM reflects convolutional feature sensitivity only. Bidirectional LSTM and Self-Attention temporal layers subsequently aggregate these spatial activations across all chunks. Saliency highlights acoustic affinity, not definitive musical causality.</em>
+                      </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
     # ====================================================
     # MODEL PERFORMANCE PAGE

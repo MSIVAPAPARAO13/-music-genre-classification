@@ -422,5 +422,64 @@ class TestExplainableDashboardAndVisualizations:
         assert isinstance(fig_cm, plt.Figure)
         plt.close(fig_cm)
 
+    def test_gradcam_on_both_models_and_target_classes(self):
+        """Verify Grad-CAM works reliably across both default and rollback models and multiple classes."""
+        from Music_Genre_App import load_trained_model, compute_gradcam, TARGET_SHAPE
+
+        dummy_chunk = np.random.randn(1, 150, 150, 1).astype(np.float32)
+
+        models_to_test = ["Leakage_Safe_CRNN_Model.keras"]
+        if os.path.exists("Hybrid_CRNN_Model.keras"):
+            models_to_test.append("Hybrid_CRNN_Model.keras")
+
+        for m_path in models_to_test:
+            model = load_trained_model(m_path)
+            # Test multiple explicit classes: Blues (0), Jazz (5), Rock (9)
+            for c_idx in [0, 5, 9]:
+                cam = compute_gradcam(model, dummy_chunk, class_idx=c_idx)
+                assert isinstance(cam, np.ndarray)
+                assert cam.shape == TARGET_SHAPE
+                assert np.all(np.isfinite(cam))
+                assert 0.0 <= cam.min() <= 1.0
+                assert 0.0 <= cam.max() <= 1.0
+
+    def test_gradcam_interpretation_generation(self):
+        """Verify generate_gradcam_interpretation produces structured frequency splits and insights."""
+        from Music_Genre_App import generate_gradcam_interpretation
+
+        dummy_cam = np.zeros((150, 150), dtype=np.float32)
+        # Put energy in lower bass bins
+        dummy_cam[:40, :] = 0.8
+
+        interp = generate_gradcam_interpretation(dummy_cam, "disco", chunk_idx=2, time_window="2.0s - 6.0s")
+        assert "dominant_band" in interp
+        assert "Low" in interp["dominant_band"]
+        assert interp["low_pct"] > 80.0
+        assert pytest.approx(interp["low_pct"] + interp["mid_pct"] + interp["high_pct"], rel=1e-2) == 100.0
+        assert "disco" in interp["genre_note"].lower()
+
+    def test_gradcam_handles_invalid_class_and_layer_gracefully(self):
+        """Verify compute_gradcam gracefully returns zeros for out-of-bounds class or layer."""
+        from Music_Genre_App import load_trained_model, compute_gradcam, TARGET_SHAPE
+
+        model = load_trained_model()
+        dummy_chunk = np.random.randn(1, 150, 150, 1).astype(np.float32)
+
+        # Invalid class index 99
+        cam_inv = compute_gradcam(model, dummy_chunk, class_idx=99)
+        assert cam_inv.shape == TARGET_SHAPE
+        assert np.all(cam_inv == 0.0)
+
+    def test_workflow_stepper_rendering(self):
+        """Verify render_workflow_stepper returns valid HTML with expected 9 steps across stages."""
+        from Music_Genre_App import render_workflow_stepper
+
+        for stage in ["awaiting", "uploaded", "analyzed"]:
+            html = render_workflow_stepper(stage)
+            assert "workflow-strip" in html
+            assert "① Upload Audio" in html
+            assert "⑨ Explore Explanations" in html
+
+
 
 

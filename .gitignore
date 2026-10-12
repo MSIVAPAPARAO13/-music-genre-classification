@@ -1,5 +1,8 @@
 # Project-specific: Large Data and Models
 Data/
+genres_original/
+genres/
+gtzan/
 *.npy
 
 
