@@ -176,16 +176,18 @@ pytest test_inference.py -v
 ## Public Deployment Instructions
 
 ### Option A: Streamlit Community Cloud (Recommended)
-1. Push repository changes to GitHub (`main` branch).
+1. Push repository changes to GitHub.
 2. Go to [share.streamlit.io](https://share.streamlit.io/) and click **New App**.
 3. Configure:
    * **Repository**: `MSIVAPAPARAO13/-music-genre-classification`
-   * **Branch**: `main`
+   * **Branch**: `main` (or `fix/streamlit-cloud-dependencies`)
    * **Main file path**: `Music_Genre_App.py`
-4. The deployment automatically utilizes:
-   * `requirements.txt` for Python packages (`streamlit`, `tensorflow`, `librosa`, etc.).
+4. Click **Advanced settings...**:
+   * **Python version**: Select **`3.12`** *(CRITICAL: TensorFlow 2.16.2 provides official wheels for Python 3.12; leaving it at default 3.13 causes `No matching distribution found for tensorflow`)*.
+5. Click **Deploy!**. The deployment automatically provisions:
+   * `requirements.txt` for pinned Python packages (`streamlit`, `tensorflow`, `librosa`, etc.).
    * `packages.txt` for Linux system libraries (`libsndfile1`, `ffmpeg`).
-5. Once live, test audio file upload and prediction.
+6. Once live, test audio file upload and prediction.
 
 ### Option B: Docker Container
 ```dockerfile
