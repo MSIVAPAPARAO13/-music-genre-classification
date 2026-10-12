@@ -14,6 +14,8 @@ The core system uses a **Hybrid CRNN (Convolutional Recurrent Neural Network)** 
 * **GitHub Repository**: [https://github.com/MSIVAPAPARAO13/-music-genre-classification](https://github.com/MSIVAPAPARAO13/-music-genre-classification)
 * **Live Demo**: *(Deployable via Streamlit Community Cloud — see deployment instructions below)*
 
+![SoundMind Music Genre Intelligence Dashboard](Images/home.jpg)
+
 ---
 
 ## Features
@@ -28,6 +30,16 @@ The core system uses a **Hybrid CRNN (Convolutional Recurrent Neural Network)** 
 * **Acoustically Aligned Preprocessing**: Resamples all incoming audio to native 22,050 Hz, slices into rolling 4-second chunks with 2-second overlap, and computes raw power Mel spectrograms resized to `(150, 150, 1)`.
 * **Dedicated Benchmark Performance Dashboard**: Visualizes GTZAN held-out test benchmarks, per-genre precision/recall/F1, and a 10×10 confusion matrix heatmap.
 * **Robust Validation**: Gracefully catches and explains unreadable files, corrupt streams, empty audio, and clips under 4.0 seconds.
+
+### Visual Audio Intelligence Workflow
+
+| Audio Amplitude & Mel-Spectrogram | Genre Confidence Distribution |
+| :---: | :---: |
+| ![Audio Visualizations](Images/audio_visualizations.png) | ![Prediction Scores](Images/prediction_scores.png) |
+
+### Explainable AI via Grad-CAM
+![Grad-CAM Saliency Map](Images/gradcam_saliency.png)
+*Figure: Grad-CAM class activation mapping over a 4-second Mel-spectrogram chunk, highlighting the dominant acoustic energy bands driving the classification.*
 
 ---
 
@@ -116,6 +128,10 @@ Evaluated strictly **once** on the 150 completely unseen held-out test tracks (2
 | **Rock** | 0.64 | 0.60 | **0.62** | 15 |
 | **Macro Avg** | **0.82** | **0.81** | **0.81** | **150** |
 
+### Confusion Matrix on Held-Out Test Tracks
+![Normalized Confusion Matrix Heatmap](Images/confusion_matrix.png)
+*Figure: Normalized 10×10 confusion matrix across all 150 held-out GTZAN test songs.*
+
 *Full metrics and confusion matrix are stored in `leakage_safe_evaluation_report.json`.*
 
 ---
@@ -201,10 +217,15 @@ docker run -p 8501:8501 music-genre-app
 ├── leakage_safe_training_hist.json    # Epoch-by-epoch training and validation loss/accuracy
 ├── leakage_safe_training.py           # Reproducible training & evaluation pipeline
 ├── gtzan_leakage_safe_split.json      # Frozen 70/15/15 track-level partition manifest
-├── test_inference.py                  # Pytest test suite (22 automated unit tests)
+├── test_inference.py                  # Pytest test suite (24 automated unit tests)
 ├── requirements.txt                   # Pinned Python package dependencies
 ├── packages.txt                       # Linux system packages (libsndfile1, ffmpeg)
-├── Images/home.jpg                    # Application banner image
+├── Images/                            # Dashboard screenshots & analytical visualizations
+│   ├── home.jpg                       # Application banner & dashboard hero
+│   ├── audio_visualizations.png       # Audio waveform & Log Mel-spectrogram
+│   ├── prediction_scores.png          # Real-time multi-genre prediction confidence
+│   ├── gradcam_saliency.png           # Grad-CAM time-frequency saliency explanation
+│   └── confusion_matrix.png           # 10x10 normalized confusion matrix heatmap
 ├── Test_music/                        # Real audio test samples for verification
 └── README.md                          # Documentation
 ```
