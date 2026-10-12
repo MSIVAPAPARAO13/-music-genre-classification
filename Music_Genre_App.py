@@ -408,369 +408,933 @@ def plot_confusion_matrix_heatmap(report_data):
 
 
 # ---------------------------------------------------------
-# Streamlit User Interface
+# Premium CSS Design System
+# ---------------------------------------------------------
+PREMIUM_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ── Root Tokens ───────────────────────────────────────── */
+:root {
+  --bg-base:        #080c10;
+  --bg-surface:     #0d1117;
+  --bg-raised:      #111820;
+  --bg-card:        rgba(17, 24, 32, 0.85);
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-glow:    rgba(16, 185, 129, 0.35);
+  --accent:         #10b981;
+  --accent-bright:  #34d399;
+  --accent-dim:     rgba(16, 185, 129, 0.12);
+  --accent-glow:    0 0 20px rgba(16,185,129,0.25);
+  --blue:           #3b82f6;
+  --blue-dim:       rgba(59,130,246,0.12);
+  --text-primary:   #f0f4f8;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --radius-sm:      8px;
+  --radius-md:      14px;
+  --radius-lg:      20px;
+  --radius-xl:      28px;
+}
+
+/* ── Base Reset ────────────────────────────────────────── */
+.main .block-container {
+  padding: 1.5rem 2.5rem 3rem !important;
+  max-width: 1280px;
+}
+html, body, [data-testid="stApp"] {
+  background: var(--bg-base) !important;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+}
+
+/* ── Sidebar ───────────────────────────────────────────── */
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #080c10 0%, #0d1520 100%) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+}
+[data-testid="stSidebar"] .block-container { padding: 1.5rem 1rem !important; }
+[data-testid="stSidebar"] h1 { display: none; }
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 0 1.5rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 1.5rem;
+}
+.sidebar-brand-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), #0ea5e9);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--accent-glow);
+}
+.sidebar-brand-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
+.sidebar-brand-sub  { font-size: 0.65rem; color: var(--text-muted); font-weight: 400; }
+
+/* ── Selectbox ─────────────────────────────────────────── */
+[data-testid="stSelectbox"] > div > div {
+  background: var(--bg-raised) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  transition: border-color .2s;
+}
+[data-testid="stSelectbox"] > div > div:hover {
+  border-color: var(--accent) !important;
+}
+
+/* ── Metric Cards ──────────────────────────────────────── */
+[data-testid="stMetric"] {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 1.1rem 1.3rem !important;
+  backdrop-filter: blur(12px);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+[data-testid="stMetric"]:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-glow) !important;
+  box-shadow: var(--accent-glow);
+}
+[data-testid="stMetricLabel"]  { color: var(--text-secondary) !important; font-size: 0.75rem !important; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
+[data-testid="stMetricValue"]  { color: var(--text-primary) !important; font-family: 'Space Grotesk', sans-serif !important; font-size: 1.7rem !important; font-weight: 700; }
+[data-testid="stMetricDelta"]  { color: var(--accent-bright) !important; font-size: 0.78rem !important; font-weight: 600; }
+
+/* ── Tabs ──────────────────────────────────────────────── */
+[data-testid="stTabs"] [role="tablist"] {
+  background: var(--bg-raised);
+  border-radius: var(--radius-md) !important;
+  padding: 4px !important;
+  border: 1px solid var(--border-subtle);
+  gap: 2px;
+}
+[data-testid="stTabs"] [role="tab"] {
+  border-radius: 10px !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  font-size: 0.82rem !important;
+  padding: 6px 14px !important;
+  transition: all .2s;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+  background: linear-gradient(135deg, var(--accent), #0ea5e9) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 12px rgba(16,185,129,.35);
+}
+
+/* ── Buttons ───────────────────────────────────────────── */
+[data-testid="stButton"] > button[kind="primary"] {
+  background: linear-gradient(135deg, #10b981, #0ea5e9) !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  padding: 0.65rem 2rem !important;
+  box-shadow: 0 4px 20px rgba(16,185,129,.4);
+  transition: transform .15s, box-shadow .15s;
+  letter-spacing: .03em;
+}
+[data-testid="stButton"] > button[kind="primary"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(16,185,129,.55) !important;
+}
+
+/* ── File Uploader ─────────────────────────────────────── */
+[data-testid="stFileUploader"] {
+  background: var(--bg-raised) !important;
+  border: 2px dashed var(--border-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 2rem !important;
+  transition: border-color .2s;
+}
+[data-testid="stFileUploader"]:hover { border-color: var(--accent) !important; }
+
+/* ── DataFrame ─────────────────────────────────────────── */
+[data-testid="stDataFrame"] {
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+}
+
+/* ── Alert Boxes ───────────────────────────────────────── */
+[data-testid="stAlert"] {
+  border-radius: var(--radius-md) !important;
+  border-left-width: 3px !important;
+}
+
+/* ── Divider ───────────────────────────────────────────── */
+hr { border-color: var(--border-subtle) !important; margin: 1.5rem 0 !important; }
+
+/* ── Spinner ───────────────────────────────────────────── */
+[data-testid="stSpinner"] { color: var(--accent) !important; }
+
+/* ── Audio Player ──────────────────────────────────────── */
+audio { border-radius: var(--radius-md) !important; width: 100%; }
+
+/* ── Custom Components ─────────────────────────────────── */
+.hero-section {
+  background: linear-gradient(135deg, #080c10 0%, #0d1e2e 40%, #071a12 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 3.5rem 3rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-section::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(16,185,129,.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero-section::after {
+  content: '';
+  position: absolute; bottom: -80px; left: 20%;
+  width: 400px; height: 200px;
+  background: radial-gradient(ellipse, rgba(14,165,233,.07) 0%, transparent 70%);
+}
+.hero-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.8rem; font-weight: 800;
+  background: linear-gradient(135deg, #f0f4f8 0%, var(--accent-bright) 60%, #38bdf8 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1; margin: 0 0 0.6rem;
+}
+.hero-subtitle {
+  font-size: 1.05rem; color: var(--text-secondary);
+  font-weight: 400; margin: 0 0 2rem;
+  max-width: 600px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent-dim); border: 1px solid var(--border-glow);
+  border-radius: 50px; padding: 4px 14px;
+  font-size: 0.72rem; font-weight: 600; color: var(--accent-bright);
+  letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.hero-stats {
+  display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 2rem;
+}
+.hero-stat { display: flex; flex-direction: column; }
+.hero-stat-val {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem; font-weight: 700; color: var(--accent-bright);
+}
+.hero-stat-lbl { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1.8rem;
+  backdrop-filter: blur(12px);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-glow);
+  box-shadow: var(--accent-glow);
+}
+
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+  position: relative; overflow: hidden;
+}
+.feature-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), #0ea5e9, transparent);
+  opacity: 0; transition: opacity .2s;
+}
+.feature-card:hover { transform: translateY(-3px); border-color: var(--border-glow); box-shadow: var(--accent-glow); }
+.feature-card:hover::before { opacity: 1; }
+.feature-icon { font-size: 1.8rem; margin-bottom: 0.7rem; }
+.feature-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.4rem; }
+.feature-desc  { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; }
+
+.result-banner {
+  background: linear-gradient(135deg, rgba(16,185,129,.12), rgba(14,165,233,.08));
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-xl);
+  padding: 2rem 2.5rem;
+  margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 1.5rem;
+}
+.result-genre-icon { font-size: 3.5rem; }
+.result-genre-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.5rem; font-weight: 800;
+  background: linear-gradient(135deg, #f0f4f8, var(--accent-bright));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1;
+}
+.result-genre-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .08em; }
+
+.section-label {
+  font-size: 0.7rem; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem; font-weight: 700;
+  color: var(--text-primary); margin: 0 0 1rem;
+}
+
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1.2rem 0; }
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.2rem 1.1rem;
+  text-align: center;
+  transition: transform .2s, border-color .2s;
+}
+.kpi-card:hover { transform: translateY(-2px); border-color: var(--border-glow); }
+.kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 1.9rem; font-weight: 700; color: var(--accent-bright); }
+.kpi-lbl { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+
+.genre-icon-map { blues:'🎸', classical:'🎻', country:'🤠', disco:'🪩', hiphop:'🎤', jazz:'🎷', metal:'🤘', pop:'🎵', reggae:'🌴', rock:'🎸' }
+
+.info-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--blue-dim); border: 1px solid rgba(59,130,246,.25);
+  border-radius: 50px; padding: 3px 10px;
+  font-size: 0.72rem; font-weight: 600; color: #60a5fa;
+}
+
+.chunk-agree { color: #34d399; font-weight: 600; }
+.chunk-dissent { color: #f87171; font-weight: 600; }
+
+.about-arch-block {
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 1.6rem;
+}
+.arch-row {
+  display: flex; align-items: flex-start; gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.arch-row:last-child { border-bottom: none; }
+.arch-num {
+  min-width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), #0ea5e9);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; color: #fff; margin-top: 2px;
+}
+.arch-content-title { font-weight: 600; font-size: 0.88rem; color: var(--text-primary); }
+.arch-content-desc  { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+
+/* ── Sidebar Model Badge ───────────────────────────────── */
+.model-active-badge {
+  background: var(--accent-dim); border: 1px solid var(--border-glow);
+  border-radius: var(--radius-sm); padding: 0.6rem 0.9rem;
+  margin-top: 0.5rem;
+}
+.model-active-badge .badge-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+.model-active-badge .badge-val   { font-size: 0.78rem; font-weight: 600; color: var(--accent-bright); margin-top: 2px; }
+
+/* ── Slider ────────────────────────────────────────────── */
+[data-testid="stSlider"] .stSlider > div > div > div { background: var(--accent) !important; }
+</style>
+"""
+
+GENRE_ICONS = {
+    'blues': '🎸', 'classical': '🎻', 'country': '🤠', 'disco': '🪩',
+    'hiphop': '🎤', 'jazz': '🎷', 'metal': '🤘', 'pop': '🎵',
+    'reggae': '🌴', 'rock': '🥁'
+}
+
+
+# ---------------------------------------------------------
+# Streamlit User Interface — Premium Edition
 # ---------------------------------------------------------
 def render_ui():
     st.set_page_config(
-        page_title="Music Genre Classifier — Explainable AI Dashboard",
+        page_title="SoundMind — Music Genre Intelligence",
         page_icon="🎵",
-        layout="wide"
+        layout="wide",
+        initial_sidebar_state="expanded"
     )
 
-    st.sidebar.title("🎵 Navigation")
-    app_mode = st.sidebar.selectbox(
-        "Select Page",
-        ["Home", "Prediction & Analysis", "Model Performance", "About"]
-    )
+    # Inject design system
+    st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Model Configuration")
-    selected_model_label = st.sidebar.selectbox(
-        "Active Model",
-        options=list(AVAILABLE_MODELS.keys()),
-        index=0,
-        help="Select the inference model. Default is the validated leakage-safe model with rollback support."
-    )
-    active_model_path = AVAILABLE_MODELS[selected_model_label]
+    # ── Sidebar ──────────────────────────────────────────
+    with st.sidebar:
+        st.markdown("""
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-icon">🎵</div>
+          <div class="sidebar-brand-text">
+            SoundMind
+            <div class="sidebar-brand-sub">Music Genre Intelligence</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # -----------------------------------------------------
+        app_mode = st.selectbox(
+            "Navigate to",
+            ["🏠 Home", "🎧 Prediction & Analysis", "📊 Model Performance", "ℹ️ About"],
+            label_visibility="collapsed"
+        )
+
+        st.markdown("---")
+        st.markdown('<div class="section-label">Model Configuration</div>', unsafe_allow_html=True)
+        selected_model_label = st.selectbox(
+            "Active Model",
+            options=list(AVAILABLE_MODELS.keys()),
+            index=0,
+            help="Leakage-Safe CRNN is the production model. Legacy Hybrid is available as a rollback."
+        )
+        active_model_path = AVAILABLE_MODELS[selected_model_label]
+
+        is_primary = "Leakage-Safe" in selected_model_label
+        badge_icon = "✅" if is_primary else "🔄"
+        badge_type = "Production" if is_primary else "Rollback"
+        st.markdown(f"""
+        <div class="model-active-badge">
+          <div class="badge-label">{badge_icon} Status</div>
+          <div class="badge-val">{badge_type} Model Active</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.markdown("""
+        <div style="font-size:0.72rem; color:#475569; line-height:1.7;">
+          <b style="color:#94a3b8;">Architecture</b><br>
+          4× Conv Block + BiLSTM + Attention<br><br>
+          <b style="color:#94a3b8;">Input Shape</b><br>
+          150 × 150 × 1 Mel-spectrogram<br><br>
+          <b style="color:#94a3b8;">Track Accuracy</b><br>
+          <span style="color:#34d399; font-weight:700;">81.33%</span> on GTZAN held-out test
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Map page name ────────────────────────────────────
+    page = app_mode.split(" ", 1)[1] if " " in app_mode else app_mode
+
+    # ====================================================
     # HOME PAGE
-    # -----------------------------------------------------
-    if app_mode == "Home":
-        st.title("🎧 Music Genre Classification System")
-        st.subheader("Deep Audio Analysis using a Leakage-Safe Hybrid CRNN")
+    # ====================================================
+    if "Home" in page:
+        # Hero Section
+        st.markdown("""
+        <div class="hero-section">
+          <div class="hero-badge">🎵 AI Audio Intelligence Platform</div>
+          <div class="hero-title">Music Genre<br>Classification</div>
+          <div class="hero-subtitle">
+            Deep audio analysis powered by a leakage-safe Hybrid CNN–BiLSTM–Attention network.
+            Upload any track and get instant explainable genre predictions.
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <span class="hero-stat-val">81.33%</span>
+              <span class="hero-stat-lbl">Track Accuracy</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-val">10</span>
+              <span class="hero-stat-lbl">Music Genres</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-val">999</span>
+              <span class="hero-stat-lbl">Training Tracks</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-val">0</span>
+              <span class="hero-stat-lbl">Data Leaks</span>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
+        # Hero image
         image_path = os.path.join(BASE_DIR, "Images", "home.jpg")
         if os.path.exists(image_path):
             st.image(image_path, use_container_width=True)
 
+        # Feature cards
+        st.markdown('<div class="section-label" style="margin-top:2rem;">Core Capabilities</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">What This Platform Does</div>', unsafe_allow_html=True)
+
         st.markdown("""
-        ### Welcome!
-        This platform delivers deep audio understanding to classify music into 10 target genres:
-        **Blues, Classical, Country, Disco, Hiphop, Jazz, Metal, Pop, Reggae, and Rock**.
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-title">Leakage-Safe Training</div>
+            <div class="feature-desc">Track-level train/val/test split enforced before chunk extraction. Zero acoustic cross-contamination between partitions.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-title">Temporal Aggregation</div>
+            <div class="feature-desc">Slices tracks into 4-second rolling windows with 2-second overlap. Aggregates chunk votes for high-confidence predictions.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-title">Explainable AI (Grad-CAM)</div>
+            <div class="feature-desc">Gradient-weighted Class Activation Maps highlight which time-frequency spectrogram regions drove each classification decision.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">Interactive Dashboard</div>
+            <div class="feature-desc">Waveforms, log Mel-spectrograms, chunk-by-chunk prediction trajectories, and full benchmark performance metrics.</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        #### ✨ Core System Capabilities:
-        1. **Leakage-Safe Deep Learning**: Powered by a 4-block CNN + Bidirectional LSTM + Self-Attention model trained strictly on song-level splits.
-        2. **Multi-Chunk Temporal Aggregation**: Slices full tracks into rolling 4-second windows with 2-second overlap for high-confidence predictions.
-        3. **Explainable AI (Grad-CAM)**: Visualizes the time-frequency spectrogram regions that influenced the model's decision.
-        4. **Interactive Dashboard**: Waveforms, log Mel-spectrograms, chunk trajectories, and performance metrics.
+        # Genres row
+        st.markdown('<div class="section-label" style="margin-top:2rem;">Supported Genres</div>', unsafe_allow_html=True)
+        genre_cols = st.columns(10)
+        for i, (g, icon) in enumerate(GENRE_ICONS.items()):
+            with genre_cols[i]:
+                st.markdown(f"""
+                <div style="text-align:center; padding:0.8rem 0.3rem;
+                  background:rgba(17,24,32,0.85); border:1px solid rgba(255,255,255,0.06);
+                  border-radius:12px; transition:all .2s;">
+                  <div style="font-size:1.6rem;">{icon}</div>
+                  <div style="font-size:0.65rem; color:#94a3b8; margin-top:4px; font-weight:500; text-transform:uppercase; letter-spacing:.05em;">{g}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        #### 🚀 Getting Started:
-        Navigate to **Prediction & Analysis** in the sidebar to upload an MP3 or WAV file and inspect its acoustic signature!
-        """)
+        # CTA
+        st.markdown("""
+        <div style="margin-top:2.5rem; text-align:center;">
+          <div style="color:#475569; font-size:0.85rem;">
+            ↑ Use the sidebar to navigate to <strong style="color:#34d399;">Prediction & Analysis</strong> to upload a track
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # -----------------------------------------------------
+    # ====================================================
     # PREDICTION & ANALYSIS PAGE
-    # -----------------------------------------------------
-    elif app_mode == "Prediction & Analysis":
-        st.header("🎧 Prediction & Explainable Audio Analysis")
-        st.caption(f"Currently Active Model: **{selected_model_label}**")
+    # ====================================================
+    elif "Prediction" in page:
+        st.markdown('<div class="section-label">Audio Intelligence</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Prediction & Explainable Audio Analysis</div>', unsafe_allow_html=True)
 
+        # Model badge
+        st.markdown(f"""
+        <div class="info-pill" style="margin-bottom:1.2rem;">
+          🤖 &nbsp; Active: {selected_model_label}
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Upload section
+        st.markdown('<div class="glass-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
         test_audio = st.file_uploader(
-            "Upload an Audio File (MP3 or WAV)", type=["mp3", "wav"]
+            "Drop your audio file here or click to browse",
+            type=["mp3", "wav"],
+            help="Supports MP3 and WAV. Minimum 4 seconds required."
         )
+        st.markdown('</div>', unsafe_allow_html=True)
 
         if test_audio is not None:
-            # Metadata & Audio player row
-            col_player, col_meta = st.columns([1, 1])
+            col_player, col_meta = st.columns([1, 1], gap="large")
             with col_player:
-                st.subheader("🔊 Audio Playback")
+                st.markdown('<div class="section-label">Playback</div>', unsafe_allow_html=True)
                 st.audio(test_audio)
 
             with col_meta:
-                st.subheader("📋 Track Information")
+                st.markdown('<div class="section-label">Track Metadata</div>', unsafe_allow_html=True)
                 try:
                     meta = get_audio_metadata(test_audio)
                     dur_min = int(meta["duration_sec"] // 60)
-                    dur_sec = int(meta["duration_sec"] % 60)
-                    chan_desc = "Stereo (2 Channels)" if meta["channels"] == 2 else "Mono (1 Channel)"
-
+                    dur_sec_val = int(meta["duration_sec"] % 60)
+                    chan_desc = "Stereo" if meta["channels"] == 2 else "Mono"
                     st.markdown(f"""
-                    - **Format**: `{meta['format']}`
-                    - **Duration**: `{dur_min:02d}:{dur_sec:02d}` ({meta['duration_sec']:.2f} seconds)
-                    - **Native Sample Rate**: `{meta['original_sr']:,} Hz`
-                    - **Channels**: `{chan_desc}` (resampled to `22,050 Hz Mono` for inference)
-                    """)
+                    <div class="glass-card" style="padding:1rem 1.2rem;">
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
+                        <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Format</div>
+                             <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;">{meta['format']}</div></div>
+                        <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Duration</div>
+                             <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;">{dur_min:02d}:{dur_sec_val:02d}</div></div>
+                        <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Sample Rate</div>
+                             <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;">{meta['original_sr']:,} Hz</div></div>
+                        <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Channels</div>
+                             <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;">{chan_desc} → Mono 22kHz</div></div>
+                      </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 except Exception as me:
-                    st.warning(f"Could not read detailed audio header metadata: {me}")
+                    st.warning(f"Could not read audio metadata: {me}")
 
-            st.markdown("---")
+            st.markdown("<br>", unsafe_allow_html=True)
+            run_btn = st.button("🚀  Analyse Track & Predict Genre", type="primary", use_container_width=True)
 
-            if st.button("🚀 Run Genre Prediction & Acoustic Analysis", type="primary"):
-                with st.spinner("Extracting features, chunking spectrograms, and running inference..."):
+            if run_btn:
+                with st.spinner("Extracting Mel-spectrograms, chunking audio, and running CRNN inference..."):
                     try:
-                        # 1. Preprocess chunks for inference
                         X_test = load_and_preprocess_file(test_audio)
-                        # 2. Extract full waveform for visualization
                         raw_wave, sr = load_audio_waveform(test_audio, target_sr=TARGET_SR)
-                        # 3. Load active model
                         model = load_trained_model(active_model_path)
-                        # 4. Run prediction with chunk breakdown
                         predicted_idx, top_predictions, mean_probabilities, chunk_details = model_prediction(
                             X_test, model=model, return_chunk_details=True
                         )
                         top_genre = GENRE_LABELS[predicted_idx]
 
-                        # Store in session state for instant tab switching
-                        st.session_state["analysis_ready"] = True
-                        st.session_state["X_test"] = X_test
-                        st.session_state["raw_wave"] = raw_wave
-                        st.session_state["sr"] = sr
-                        st.session_state["predicted_idx"] = predicted_idx
-                        st.session_state["top_genre"] = top_genre
-                        st.session_state["top_predictions"] = top_predictions
-                        st.session_state["mean_probabilities"] = mean_probabilities
-                        st.session_state["chunk_details"] = chunk_details
-
+                        st.session_state.update({
+                            "analysis_ready": True,
+                            "X_test": X_test, "raw_wave": raw_wave, "sr": sr,
+                            "predicted_idx": predicted_idx, "top_genre": top_genre,
+                            "top_predictions": top_predictions,
+                            "mean_probabilities": mean_probabilities,
+                            "chunk_details": chunk_details,
+                        })
                     except ValueError as ve:
                         st.error(f"⚠️ Audio Input Error: {ve}")
                     except Exception as e:
-                        st.error(f"⚠️ Unexpected Error during analysis: {e}")
+                        st.error(f"⚠️ Unexpected error during analysis: {e}")
 
-            # Display results if available in session state
+            # ── Results ──────────────────────────────────
             if st.session_state.get("analysis_ready", False):
-                X_test = st.session_state["X_test"]
-                raw_wave = st.session_state["raw_wave"]
-                sr = st.session_state["sr"]
-                predicted_idx = st.session_state["predicted_idx"]
-                top_genre = st.session_state["top_genre"]
-                top_predictions = st.session_state["top_predictions"]
+                X_test            = st.session_state["X_test"]
+                raw_wave          = st.session_state["raw_wave"]
+                sr                = st.session_state["sr"]
+                predicted_idx     = st.session_state["predicted_idx"]
+                top_genre         = st.session_state["top_genre"]
+                top_predictions   = st.session_state["top_predictions"]
                 mean_probabilities = st.session_state["mean_probabilities"]
-                chunk_details = st.session_state["chunk_details"]
+                chunk_details     = st.session_state["chunk_details"]
+                total_chunks      = len(chunk_details)
+                top_icon          = GENRE_ICONS.get(top_genre, "🎵")
 
-                # 4 Main Tabs
+                # Result banner
+                top_score = top_predictions[0]["score"] * 100
+                st.markdown(f"""
+                <div class="result-banner">
+                  <div class="result-genre-icon">{top_icon}</div>
+                  <div>
+                    <div style="font-size:0.7rem;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Predicted Genre</div>
+                    <div class="result-genre-name">{top_genre.capitalize()}</div>
+                    <div class="result-genre-sub">Model confidence · {top_score:.1f}% · {total_chunks} chunks analysed</div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
                 tab1, tab2, tab3, tab4 = st.tabs([
-                    "🎧 Overall Prediction & Scores",
-                    "🔍 Chunk-Level Trajectory",
-                    "📈 Audio & Spectral Visualizations",
-                    "🧠 Explainability (Grad-CAM)"
+                    "🏆 Scores & Rankings",
+                    "🔍 Chunk Trajectory",
+                    "📈 Visualizations",
+                    "🧠 Grad-CAM XAI"
                 ])
 
-                # ---------------------------------------------
-                # TAB 1: OVERALL PREDICTION & SCORES
-                # ---------------------------------------------
+                # ── TAB 1: Scores ─────────────────────────
                 with tab1:
-                    st.subheader(f"🎶 Final Predicted Genre: **{top_genre.capitalize()}**")
-
-                    metric_cols = st.columns(3)
+                    st.markdown('<div class="section-label" style="margin-top:.5rem;">Top 3 Predictions</div>', unsafe_allow_html=True)
+                    rank_cols = st.columns(3, gap="medium")
+                    medals = ["🥇", "🥈", "🥉"]
                     for r, item in enumerate(top_predictions):
-                        with metric_cols[r]:
+                        with rank_cols[r]:
                             pct = item["score"] * 100
+                            icon = GENRE_ICONS.get(item["genre"], "🎵")
                             st.metric(
-                                label=f"Rank #{item['rank']} Genre",
-                                value=item["genre"].capitalize(),
-                                delta=f"{pct:.2f}% score"
+                                label=f"{medals[r]} Rank #{item['rank']} — {icon} {item['genre'].capitalize()}",
+                                value=f"{pct:.1f}%",
+                                delta="Top pick" if r == 0 else f"−{(top_predictions[0]['score']-item['score'])*100:.1f}% vs #1"
                             )
 
-                    st.markdown("#### All 10 Genre Scores Breakdown")
+                    st.markdown("---")
+                    st.markdown('<div class="section-label">All 10 Genre Scores</div>', unsafe_allow_html=True)
                     fig_bar = plot_genre_scores_chart(mean_probabilities, predicted_idx)
                     st.pyplot(fig_bar)
                     plt.close(fig_bar)
 
-                    st.info("""
-                    **⚠️ Probability Calibration Notice**:
-                    The displayed scores reflect softmax activation values averaged across all 4-second audio chunks.
-                    They indicate relative acoustic similarity to training clusters rather than absolute real-world probabilities.
-                    """)
+                    st.info(
+                        "**Calibration Note:** Scores are averaged softmax activations across all 4-second chunks. "
+                        "They reflect acoustic similarity to training distributions, not absolute real-world probabilities."
+                    )
 
-                # ---------------------------------------------
-                # TAB 2: CHUNK-LEVEL TRAJECTORY
-                # ---------------------------------------------
+                # ── TAB 2: Chunk Trajectory ───────────────
                 with tab2:
-                    st.subheader("🔍 Chunk-by-Chunk Prediction Trajectory")
-                    total_chunks = len(chunk_details)
                     agreeing_chunks = sum(1 for c in chunk_details if c["agrees_with_overall"])
                     consensus_pct = (agreeing_chunks / total_chunks) * 100
 
-                    c_m1, c_m2, c_m3 = st.columns(3)
-                    c_m1.metric("Total 4-second Chunks", f"{total_chunks}")
-                    c_m2.metric("Consensus Chunks", f"{agreeing_chunks} / {total_chunks}")
-                    c_m3.metric("Consensus Rate", f"{consensus_pct:.1f}%")
+                    st.markdown('<div class="section-label" style="margin-top:.5rem;">Temporal Consensus</div>', unsafe_allow_html=True)
+                    cm1, cm2, cm3 = st.columns(3, gap="medium")
+                    cm1.metric("Total Chunks", str(total_chunks))
+                    cm2.metric("Consensus Chunks", f"{agreeing_chunks} / {total_chunks}")
+                    cm3.metric("Consensus Rate", f"{consensus_pct:.1f}%")
 
-                    # Highlight dissenting chunks
                     dissenting = [c for c in chunk_details if not c["agrees_with_overall"]]
-                    if len(dissenting) > 0:
-                        st.warning(f"**{len(dissenting)} Dissenting Chunk(s) Detected:**")
+                    if dissenting:
+                        st.warning(f"**{len(dissenting)} dissenting chunk(s) detected** — voted for a different genre than the overall track prediction.")
                         for d in dissenting:
                             st.markdown(
-                                f"- **Chunk {d['chunk_idx']} ({d['time_window']})**: "
-                                f"voted for **{d['predicted_genre'].capitalize()}** ({d['confidence']*100:.1f}%), "
-                                f"differing from overall **{top_genre.capitalize()}**."
+                                f"- **Chunk {d['chunk_idx']} · {d['time_window']}** → "
+                                f"voted **{d['predicted_genre'].capitalize()}** ({d['confidence']*100:.1f}%) "
+                                f"vs overall **{top_genre.capitalize()}**"
                             )
-                        st.caption("ℹ️ *Dissenting chunks commonly occur during transitional musical passages such as drum solos, spoken intros, or acoustic bridges.*")
+                        st.caption("*Dissenting chunks often occur at musical transitions: drum solos, spoken intros, or acoustic bridges.*")
                     else:
-                        st.success(f"**Unanimous Agreement**: All {total_chunks} chunks unanimously voted for {top_genre.capitalize()}!")
+                        st.success(f"✅ **Unanimous Agreement** — all {total_chunks} chunks voted for **{top_genre.capitalize()}**!")
 
-                    st.markdown("#### Detailed Chunk Table")
+                    st.markdown("---")
+                    st.markdown('<div class="section-label">Chunk Detail Table</div>', unsafe_allow_html=True)
                     table_rows = [
                         {
                             "Chunk #": c["chunk_idx"],
                             "Time Window": c["time_window"],
                             "Predicted Genre": c["predicted_genre"].capitalize(),
                             "Confidence": f"{c['confidence']*100:.2f}%",
-                            "Status": "✅ Agreed" if c["agrees_with_overall"] else "⚠️ Dissenting"
+                            "Status": "✅ Agrees" if c["agrees_with_overall"] else "⚠️ Dissenting"
                         }
                         for c in chunk_details
                     ]
                     st.dataframe(table_rows, use_container_width=True)
 
-                # ---------------------------------------------
-                # TAB 3: AUDIO & SPECTRAL VISUALIZATIONS
-                # ---------------------------------------------
+                # ── TAB 3: Visualizations ─────────────────
                 with tab3:
-                    st.subheader("📈 Audio Waveform & Spectral Signatures")
+                    st.markdown('<div class="section-label" style="margin-top:.5rem;">Waveform & Spectral Analysis</div>', unsafe_allow_html=True)
 
-                    st.markdown("##### 1. Full Audio Waveform")
+                    st.markdown("**① Full Waveform — Amplitude vs. Time**")
                     fig_wave = plot_waveform(raw_wave, sr)
                     st.pyplot(fig_wave)
                     plt.close(fig_wave)
 
-                    st.markdown("##### 2. Full Log Mel-Spectrogram (dB)")
+                    st.markdown("**② Full Log Mel-Spectrogram (dB)**")
                     fig_spec = plot_mel_spectrogram(raw_wave, sr)
                     st.pyplot(fig_spec)
                     plt.close(fig_spec)
 
-                    st.markdown("##### 3. Individual Chunk Spectrogram Inspector")
-                    selected_chunk_idx = st.slider(
-                        "Select Chunk to Inspect",
-                        min_value=1,
-                        max_value=total_chunks,
-                        value=1,
-                        help="Inspect the 150x150 Mel spectrogram fed into the neural network for this specific window."
+                    st.markdown("**③ Chunk Spectrogram Inspector** — CRNN Input Tensor (150×150)")
+                    sel_chunk = st.slider(
+                        "Select chunk", min_value=1, max_value=total_chunks, value=1,
+                        help="Each 4-second window is resized to a 150×150 Mel-spectrogram before CRNN inference."
                     )
-                    chunk_meta = chunk_details[selected_chunk_idx - 1]
-                    st.caption(f"Inspecting **Chunk {selected_chunk_idx}** ({chunk_meta['time_window']}) — Local Prediction: **{chunk_meta['predicted_genre'].capitalize()}** ({chunk_meta['confidence']*100:.1f}%)")
-
-                    # Display chunk spectrogram image
-                    chunk_img = X_test[selected_chunk_idx - 1].squeeze()
+                    chunk_meta = chunk_details[sel_chunk - 1]
+                    st.caption(
+                        f"Chunk {sel_chunk} · {chunk_meta['time_window']} · "
+                        f"Local prediction: **{chunk_meta['predicted_genre'].capitalize()}** "
+                        f"({chunk_meta['confidence']*100:.1f}%)"
+                    )
+                    chunk_img = X_test[sel_chunk - 1].squeeze()
                     fig_chunk, ax_chunk = plt.subplots(figsize=(6, 4), facecolor='#0e1117')
                     ax_chunk.set_facecolor('#0e1117')
                     c_im = ax_chunk.imshow(chunk_img, aspect='auto', origin='lower', cmap='magma')
                     plt.colorbar(c_im, ax=ax_chunk, fraction=0.046, pad=0.04)
-                    ax_chunk.set_title(f"Chunk {selected_chunk_idx} Model Input Tensor (150x150)", color='white', fontsize=11)
-                    ax_chunk.set_xlabel("Time Frames (Resized: 150)", color='#b0b0b0', fontsize=9)
-                    ax_chunk.set_ylabel("Mel Frequency Bins (Resized: 150)", color='#b0b0b0', fontsize=9)
+                    ax_chunk.set_title(f"Chunk {sel_chunk} · 150×150 CRNN Input", color='white', fontsize=11)
+                    ax_chunk.set_xlabel("Time Frames", color='#b0b0b0', fontsize=9)
+                    ax_chunk.set_ylabel("Mel Frequency Bins", color='#b0b0b0', fontsize=9)
                     ax_chunk.tick_params(colors='#b0b0b0')
                     fig_chunk.tight_layout()
                     st.pyplot(fig_chunk)
                     plt.close(fig_chunk)
 
-                # ---------------------------------------------
-                # TAB 4: EXPLAINABILITY (GRAD-CAM)
-                # ---------------------------------------------
+                # ── TAB 4: Grad-CAM ───────────────────────
                 with tab4:
-                    st.subheader("🧠 Explainability via Grad-CAM (Convolutional Saliency)")
-                    st.markdown("""
-                    **Grad-CAM (Gradient-weighted Class Activation Mapping)** examines the final convolutional layer 
-                    (`conv_b4_2`) to highlight which time-frequency regions in the Mel-spectrogram most strongly activated 
-                    the model in favor of the predicted genre.
-                    """)
-
-                    g_chunk_idx = st.selectbox(
-                        "Select Chunk for Saliency Analysis",
-                        options=list(range(1, total_chunks + 1)),
-                        index=0,
-                        format_func=lambda idx: f"Chunk {idx} ({chunk_details[idx-1]['time_window']}) - Voted {chunk_details[idx-1]['predicted_genre'].capitalize()}"
+                    st.markdown('<div class="section-label" style="margin-top:.5rem;">Convolutional Saliency — Grad-CAM</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        "**Grad-CAM** highlights which time-frequency regions in the Mel-spectrogram "
+                        "most strongly activated layer `conv_b4_2` toward the predicted genre."
                     )
 
-                    with st.spinner("Computing gradient-weighted class activation map..."):
+                    g_chunk_idx = st.selectbox(
+                        "Select chunk for saliency analysis",
+                        options=list(range(1, total_chunks + 1)),
+                        index=0,
+                        format_func=lambda idx: (
+                            f"Chunk {idx}  ·  {chunk_details[idx-1]['time_window']}  →  "
+                            f"{chunk_details[idx-1]['predicted_genre'].capitalize()}"
+                        )
+                    )
+                    with st.spinner("Computing Grad-CAM saliency map..."):
                         target_chunk_tensor = X_test[g_chunk_idx - 1]
                         active_model = load_trained_model(active_model_path)
                         cam_map = compute_gradcam(active_model, target_chunk_tensor, class_idx=predicted_idx)
-
-                        fig_cam = plot_gradcam_overlay(
-                            target_chunk_tensor, cam_map, top_genre, chunk_num=g_chunk_idx
-                        )
+                        fig_cam = plot_gradcam_overlay(target_chunk_tensor, cam_map, top_genre, chunk_num=g_chunk_idx)
                         st.pyplot(fig_cam)
                         plt.close(fig_cam)
 
-                    st.markdown("""
-                    #### 🔬 How to Interpret This Visualization:
-                    - **Warm Colors (Red / Yellow)**: Time-frequency coordinates that produced strong positive gradient activations for **""" + top_genre.capitalize() + """**.
-                    - **Cool Colors (Blue / Transparent)**: Areas with low or neutral influence on the genre decision.
-                    - **Technical Boundary**: Grad-CAM visualizes **convolutional feature sensitivity**. It does not constitute definitive proof of musical causality, as subsequent BiLSTM and Attention layers further integrate long-term temporal context.
+                    st.markdown(f"""
+                    **How to read this map:**
+                    - 🔴 **Warm (Red/Yellow)** — High positive gradient activation for **{top_genre.capitalize()}**
+                    - 🔵 **Cool (Blue/Green)** — Low influence on the classification decision
+                    - ⚠️ *Grad-CAM reflects convolutional sensitivity only. BiLSTM and Attention layers integrate temporal context beyond what's shown here.*
                     """)
 
-    # -----------------------------------------------------
+    # ====================================================
     # MODEL PERFORMANCE PAGE
-    # -----------------------------------------------------
-    elif app_mode == "Model Performance":
-        st.header("📊 Benchmark Evaluation & Model Performance")
-        st.markdown("""
-        All metrics below are verified results from the **GTZAN Held-Out Test Set** (150 completely unseen tracks / 2,100 chunks).
-        The evaluation was conducted under strict track-level isolation with **zero data leakage**.
-        """)
+    # ====================================================
+    elif "Performance" in page:
+        st.markdown('<div class="section-label">Verified Benchmark Results</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">GTZAN Held-Out Test Set Evaluation</div>', unsafe_allow_html=True)
+        st.markdown(
+            "All metrics are from 150 completely unseen tracks (2,100 chunks) evaluated under "
+            "strict **track-level isolation with zero data leakage**.",
+            unsafe_allow_html=False
+        )
 
         report = load_evaluation_report()
         if report is not None:
-            # Top KPI metrics
-            m1, m2, m3, m4, m5 = st.columns(5)
-            m1.metric("Track Accuracy", f"{report['track_level_metrics']['accuracy']*100:.2f}%")
-            m2.metric("Macro F1-Score", f"{report['track_level_metrics']['macro_f1']:.4f}")
-            m3.metric("Macro Precision", f"{report['track_level_metrics']['macro_precision']*100:.2f}%")
-            m4.metric("Macro Recall", f"{report['track_level_metrics']['macro_recall']*100:.2f}%")
-            m5.metric("Chunk Accuracy", f"{report['chunk_level_metrics']['accuracy']*100:.2f}%")
+            track = report["track_level_metrics"]
+            chunk_m = report["chunk_level_metrics"]
+
+            # Premium KPI grid
+            st.markdown(f"""
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-val">{track['accuracy']*100:.1f}%</div>
+                <div class="kpi-lbl">Track Accuracy</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-val">{track['macro_f1']:.3f}</div>
+                <div class="kpi-lbl">Macro F1</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-val">{track['macro_precision']*100:.1f}%</div>
+                <div class="kpi-lbl">Macro Precision</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-val">{track['macro_recall']*100:.1f}%</div>
+                <div class="kpi-lbl">Macro Recall</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-val">{chunk_m['accuracy']*100:.1f}%</div>
+                <div class="kpi-lbl">Chunk Accuracy</div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             st.markdown("---")
 
-            # Per-Class Table & Confusion Matrix
-            col_cm, col_table = st.columns([1.1, 1])
+            col_cm, col_table = st.columns([1.1, 1], gap="large")
 
             with col_cm:
-                st.subheader("Confusion Matrix (150 Held-Out Tracks)")
+                st.markdown('<div class="section-label">Confusion Matrix</div>', unsafe_allow_html=True)
+                st.markdown("150 held-out tracks — track-level majority vote")
                 fig_cm = plot_confusion_matrix_heatmap(report)
                 st.pyplot(fig_cm)
                 plt.close(fig_cm)
 
             with col_table:
-                st.subheader("Per-Genre Performance Breakdown")
+                st.markdown('<div class="section-label">Per-Genre Breakdown</div>', unsafe_allow_html=True)
                 per_class = report["per_class_classification_report"]
                 table_data = []
                 for g in report["genre_labels"]:
                     if g in per_class:
-                        metrics = per_class[g]
+                        m = per_class[g]
                         table_data.append({
-                            "Genre": g.capitalize(),
-                            "Precision": f"{metrics['precision']*100:.1f}%",
-                            "Recall": f"{metrics['recall']*100:.1f}%",
-                            "F1-Score": f"{metrics['f1-score']*100:.1f}%",
-                            "Support": int(metrics['support'])
+                            "Genre": f"{GENRE_ICONS.get(g,'🎵')} {g.capitalize()}",
+                            "Precision": f"{m['precision']*100:.1f}%",
+                            "Recall":    f"{m['recall']*100:.1f}%",
+                            "F1":        f"{m['f1-score']*100:.1f}%",
+                            "Support":   int(m['support'])
                         })
                 st.dataframe(table_data, use_container_width=True)
 
             st.markdown("---")
-            st.subheader("⚠️ Benchmark Methodology & Generalization Notes")
+            st.markdown('<div class="section-label">Methodology Notes</div>', unsafe_allow_html=True)
             st.markdown("""
-            1. **Benchmark Specificity**: GTZAN consists of 1,000 thirty-second clips digitized in the late 1990s and early 2000s under specific acoustic standards.
-            2. **Zero Track Leakage**: Songs were partitioned (70% train / 15% val / 15% test) *before* chunk extraction. No chunk of any test track was seen during training.
-            3. **Acoustic Domain Shifts**: Modern commercial music produced with heavy dynamic range compression, distinct mastering, or hybrid electronic subgenres may exhibit higher confusion rates, particularly across adjacent genres such as Rock, Country, and Pop.
+            1. **Dataset** — GTZAN: 1,000 tracks × 30 s each. File `jazz.00054.wav` excluded (corrupted). 999 valid tracks used.
+            2. **Split** — 70% train / 15% validation / 15% held-out test, partitioned **at track level** before any chunk extraction.
+            3. **Zero Leakage** — No chunk from any test track was seen during training or validation.
+            4. **Domain Shift** — Modern highly-compressed commercial productions or hybrid electronic subgenres may show higher confusion across adjacent genres (Rock ↔ Country ↔ Pop).
             """)
         else:
-            st.warning("Evaluation report `leakage_safe_evaluation_report.json` was not found.")
+            st.warning("Evaluation report `leakage_safe_evaluation_report.json` not found in the application directory.")
 
-    # -----------------------------------------------------
+    # ====================================================
     # ABOUT PAGE
-    # -----------------------------------------------------
-    elif app_mode == "About":
-        st.header("🎵 About the Music Genre Classification Project")
-        st.markdown("""
-        ### Deep Learning Architecture
-        This application utilizes a custom **Hybrid CNN–BiLSTM–Attention** deep learning network:
-        - **Spectrogram Preprocessing**: 22,050 Hz sampling rate, 4-second rolling chunks with 2-second overlap, raw power Mel-spectrogram resized to `(150, 150, 1)`.
-        - **Convolutional Feature Extractor**: 4 sequential blocks with 32, 64, 128, and 256 filters, Batch Normalization, and MaxPooling.
-        - **Context Attention Layer**: Learns temporal importance weights across feature representations.
-        - **Bidirectional LSTMs**: 2 BiLSTM layers (256 and 128 units) capture musical progression and rhythmic rhythm.
-        - **Dense Classification Head**: Dense(256) with Dropout followed by a 10-unit Softmax output.
+    # ====================================================
+    elif "About" in page:
+        st.markdown('<div class="section-label">Project Details</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">About SoundMind</div>', unsafe_allow_html=True)
 
-        ---
+        col_arch, col_data = st.columns(2, gap="large")
 
-        ### Dataset & Rollback Availability
-        - **GTZAN Benchmark**: 10 genres with 100 audio files each. Corrupted file `jazz.00054.wav` is excluded (999 valid tracks).
-        - **Active Model**: `Leakage_Safe_CRNN_Model.keras` (Phase 3B trained checkpoint).
-        - **Rollback Model**: `Hybrid_CRNN_Model.keras` (retained in the sidebar for comparative evaluation).
-        - **Source Code**: [https://github.com/MSIVAPAPARAO13/-music-genre-classification](https://github.com/MSIVAPAPARAO13/-music-genre-classification)
-        """)
+        with col_arch:
+            st.markdown('<div class="section-label" style="margin-top:.5rem;">Model Architecture</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="about-arch-block">
+              <div class="arch-row">
+                <div class="arch-num">1</div>
+                <div><div class="arch-content-title">Mel-Spectrogram Preprocessing</div>
+                     <div class="arch-content-desc">22,050 Hz, 4-second chunks, 2-second overlap. Raw power Mel-spectrogram resized to 150×150×1.</div></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-num">2</div>
+                <div><div class="arch-content-title">4× Convolutional Blocks</div>
+                     <div class="arch-content-desc">32 → 64 → 128 → 256 filters. Each block: Conv2D + BatchNorm + ReLU + MaxPool + Dropout.</div></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-num">3</div>
+                <div><div class="arch-content-title">Self-Attention Layer</div>
+                     <div class="arch-content-desc">Learns temporal importance weights across sequential feature representations before LSTM processing.</div></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-num">4</div>
+                <div><div class="arch-content-title">Bidirectional LSTMs</div>
+                     <div class="arch-content-desc">2 BiLSTM layers (256 → 128 units) capture forward and backward musical progression and rhythm.</div></div>
+              </div>
+              <div class="arch-row">
+                <div class="arch-num">5</div>
+                <div><div class="arch-content-title">Dense Classification Head</div>
+                     <div class="arch-content-desc">Dense(256) with Dropout → Softmax(10). Outputs genre probability distribution across all 10 classes.</div></div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col_data:
+            st.markdown('<div class="section-label" style="margin-top:.5rem;">Dataset & Models</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="glass-card">
+              <div style="margin-bottom:1rem;">
+                <div class="section-label" style="margin-bottom:.3rem;">GTZAN Benchmark</div>
+                <div style="font-size:0.83rem;color:#94a3b8;line-height:1.6;">
+                  10 genres × 100 tracks each. 30-second WAV clips digitized at diverse recording conditions.
+                  1 corrupted file excluded (<code>jazz.00054.wav</code>). <strong style="color:#f0f4f8;">999 valid tracks</strong> used.
+                </div>
+              </div>
+              <div style="margin-bottom:1rem;">
+                <div class="section-label" style="margin-bottom:.3rem;">Production Model</div>
+                <div style="font-size:0.83rem;color:#94a3b8;">
+                  <code>Leakage_Safe_CRNN_Model.keras</code><br>
+                  Phase 3B trained. 81.33% track-level accuracy. Zero leakage verified.
+                </div>
+              </div>
+              <div style="margin-bottom:1rem;">
+                <div class="section-label" style="margin-bottom:.3rem;">Rollback Model</div>
+                <div style="font-size:0.83rem;color:#94a3b8;">
+                  <code>Hybrid_CRNN_Model.keras</code><br>
+                  Legacy model retained in the sidebar for comparative evaluation.
+                </div>
+              </div>
+              <div>
+                <div class="section-label" style="margin-bottom:.3rem;">Source Code</div>
+                <div style="font-size:0.83rem;">
+                  <a href="https://github.com/MSIVAPAPARAO13/-music-genre-classification"
+                     target="_blank" style="color:#34d399; text-decoration:none; font-weight:600;">
+                    github.com/MSIVAPAPARAO13/-music-genre-classification ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown('<div class="section-label" style="margin-top:1.5rem;">Explainability Stack</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="glass-card">
+              <div style="font-size:0.83rem;color:#94a3b8;line-height:1.7;">
+                • <strong style="color:#f0f4f8;">Grad-CAM</strong> — targets <code>conv_b4_2</code> (final conv block)<br>
+                • Highlights time-frequency spectrogram saliency regions per chunk<br>
+                • Falls back to last Conv2D layer if named layer is absent<br>
+                • Heatmap normalized to [0, 1] and overlaid at α=0.55 on raw spectrogram
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
-    render_ui()
+    render_ui()
+

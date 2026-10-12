@@ -18,6 +18,7 @@ The core system uses a **Hybrid CRNN (Convolutional Recurrent Neural Network)** 
 
 ## Features
 
+* **Premium Audio Intelligence Dashboard**: Modern music-tech UI inspired by Spotify and Apple Music with dark theme, glassmorphic surfaces, emerald accents, and responsive layout.
 * **Leakage-Safe Inference Engine**: Production default model (`Leakage_Safe_CRNN_Model.keras`) trained on track-level partitions with zero song overlap.
 * **Instant Rollback Support**: Legacy baseline model (`Hybrid_CRNN_Model.keras`) preserved and selectable in real time via the app's sidebar.
 * **Explainable AI via Grad-CAM**: Visualizes convolutional saliency maps over Mel-spectrogram chunks to highlight time-frequency activations influencing the model's decision.
@@ -192,6 +193,7 @@ docker run -p 8501:8501 music-genre-app
 ## Project Structure
 
 ```
+├── .streamlit/config.toml             # Streamlit dark theme & production server config
 ├── Music_Genre_App.py                 # Streamlit web application & inference pipeline
 ├── Leakage_Safe_CRNN_Model.keras      # Default production model (Phase 3B leakage-safe)
 ├── Hybrid_CRNN_Model.keras            # Legacy production checkpoint (rollback option)
