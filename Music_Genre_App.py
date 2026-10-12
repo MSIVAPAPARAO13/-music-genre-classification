@@ -1,4 +1,5 @@
 import os
+import io
 import json
 import streamlit as st
 import tensorflow as tf
@@ -30,6 +31,15 @@ ROLLBACK_MODEL_PATH = os.path.join(BASE_DIR, "Hybrid_CRNN_Model.keras")
 AVAILABLE_MODELS = {
     "Leakage-Safe CRNN (Production - Recommended)": PRIMARY_MODEL_PATH,
     "Legacy Hybrid CRNN (Rollback Option)": ROLLBACK_MODEL_PATH,
+}
+
+SAMPLE_TRACKS = {
+    "🎸 Rock Track — Driving Guitars & Riff (music_rock.mp3)": os.path.join(BASE_DIR, "Test_music", "music_rock.mp3"),
+    "🎻 Classical Track — Orchestral Symphony (music_classical.mp3)": os.path.join(BASE_DIR, "Test_music", "music_classical.mp3"),
+    "🪩 Disco Track — Upbeat Dance Groove (music_disco.mp3)": os.path.join(BASE_DIR, "Test_music", "music_disco.mp3"),
+    "🎤 Hip-Hop Track — 808 Beats & Bass (music_hiphop2.mp3)": os.path.join(BASE_DIR, "Test_music", "music_hiphop2.mp3"),
+    "🎷 Jazz Track — Brass Ensemble & Swing (music_jazz2.mp3)": os.path.join(BASE_DIR, "Test_music", "music_jazz2.mp3"),
+    "🤠 Country Track — Melodic Acoustic Guitar (test_music2.mp3)": os.path.join(BASE_DIR, "Test_music", "test_music2.mp3"),
 }
 
 
@@ -784,11 +794,19 @@ def render_ui():
         </div>
         """, unsafe_allow_html=True)
 
+        NAV_OPTIONS = ["🏠 Home", "🎧 Prediction & Analysis", "📊 Model Performance", "ℹ️ About"]
+        if "nav_page" not in st.session_state or st.session_state["nav_page"] not in NAV_OPTIONS:
+            st.session_state["nav_page"] = NAV_OPTIONS[0]
+
+        default_nav_idx = NAV_OPTIONS.index(st.session_state["nav_page"])
         app_mode = st.selectbox(
             "Navigate to",
-            ["🏠 Home", "🎧 Prediction & Analysis", "📊 Model Performance", "ℹ️ About"],
-            label_visibility="collapsed"
+            NAV_OPTIONS,
+            index=default_nav_idx,
+            label_visibility="collapsed",
+            key="main_nav_select"
         )
+        st.session_state["nav_page"] = app_mode
 
         st.markdown("---")
         st.markdown('<div class="section-label">Model Configuration</div>', unsafe_allow_html=True)
@@ -859,10 +877,18 @@ def render_ui():
         </div>
         """, unsafe_allow_html=True)
 
+        col_cta1, col_cta2 = st.columns([1.5, 3])
+        with col_cta1:
+            if st.button("🎧 Analyze Your Music Now", type="primary", key="hero_cta_btn"):
+                st.session_state["nav_page"] = "🎧 Prediction & Analysis"
+                st.rerun()
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         # Hero image
         image_path = os.path.join(BASE_DIR, "Images", "home.jpg")
         if os.path.exists(image_path):
-            st.image(image_path, use_container_width=True)
+            st.image(image_path)
 
         # Feature cards
         st.markdown('<div class="section-label" style="margin-top:2rem;">Core Capabilities</div>', unsafe_allow_html=True)
@@ -907,14 +933,13 @@ def render_ui():
                 </div>
                 """, unsafe_allow_html=True)
 
-        # CTA
-        st.markdown("""
-        <div style="margin-top:2.5rem; text-align:center;">
-          <div style="color:#475569; font-size:0.85rem;">
-            ↑ Use the sidebar to navigate to <strong style="color:#34d399;">Prediction & Analysis</strong> to upload a track
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Bottom Interactive CTA
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        cta_c1, cta_c2, cta_c3 = st.columns([1, 1.6, 1])
+        with cta_c2:
+            if st.button("🚀  Start Audio Analysis & Try Examples ↗", type="primary", key="bottom_cta_btn"):
+                st.session_state["nav_page"] = "🎧 Prediction & Analysis"
+                st.rerun()
 
     # ====================================================
     # PREDICTION & ANALYSIS PAGE
@@ -926,37 +951,75 @@ def render_ui():
         # Model badge
         st.markdown(f"""
         <div class="info-pill" style="margin-bottom:1.2rem;">
-          🤖 &nbsp; Active: {selected_model_label}
+          🤖 &nbsp; Active Model: {selected_model_label}
         </div>
         """, unsafe_allow_html=True)
 
-        # Upload section
-        st.markdown('<div class="glass-card" style="margin-bottom:1.5rem;">', unsafe_allow_html=True)
-        test_audio = st.file_uploader(
-            "Drop your audio file here or click to browse",
-            type=["mp3", "wav"],
-            help="Supports MP3 and WAV. Minimum 4 seconds required."
+        st.markdown('<div class="section-label">Audio Source</div>', unsafe_allow_html=True)
+        source_mode = st.radio(
+            "Select Audio Input Method:",
+            [
+                "🎵 Pre-Loaded Verified Sample Tracks (Instant Test)",
+                "📁 Upload Custom Audio File (MP3 / WAV)"
+            ],
+            horizontal=True,
+            label_visibility="collapsed"
         )
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        if test_audio is not None:
+        audio_bytes = None
+        audio_name = ""
+
+        if "Sample" in source_mode:
+            st.markdown('<div class="glass-card" style="padding:1.2rem 1.4rem; margin-bottom:1.2rem;">', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:0.83rem;color:#94a3b8;margin-bottom:0.6rem;">Choose from benchmark audio files (GTZAN distribution) for immediate evaluation:</div>', unsafe_allow_html=True)
+            selected_sample_label = st.selectbox(
+                "Choose Sample Track",
+                options=list(SAMPLE_TRACKS.keys()),
+                index=0,
+                label_visibility="collapsed"
+            )
+            sample_path = SAMPLE_TRACKS[selected_sample_label]
+            if os.path.exists(sample_path):
+                with open(sample_path, "rb") as sf_in:
+                    audio_bytes = sf_in.read()
+                audio_name = os.path.basename(sample_path)
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="glass-card" style="padding:1.2rem 1.4rem; margin-bottom:1.2rem;">', unsafe_allow_html=True)
+            test_audio = st.file_uploader(
+                "Drop your audio file here or click to browse",
+                type=["mp3", "wav"],
+                help="Supports MP3 and WAV formats. Minimum 4.0 seconds duration required."
+            )
+            if test_audio is not None:
+                audio_bytes = test_audio.getvalue()
+                audio_name = test_audio.name
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        if audio_bytes is not None and len(audio_bytes) > 0:
+            # Detect audio or model changes to prevent stale predictions
+            sig = f"{audio_name}_{len(audio_bytes)}_{active_model_path}"
+            if st.session_state.get("active_audio_sig") != sig:
+                st.session_state["active_audio_sig"] = sig
+                st.session_state["analysis_ready"] = False
+
             col_player, col_meta = st.columns([1, 1], gap="large")
             with col_player:
-                st.markdown('<div class="section-label">Playback</div>', unsafe_allow_html=True)
-                st.audio(test_audio)
+                st.markdown('<div class="section-label">Audio Playback</div>', unsafe_allow_html=True)
+                st.audio(audio_bytes, format="audio/mp3")
 
             with col_meta:
                 st.markdown('<div class="section-label">Track Metadata</div>', unsafe_allow_html=True)
                 try:
-                    meta = get_audio_metadata(test_audio)
+                    meta = get_audio_metadata(io.BytesIO(audio_bytes))
                     dur_min = int(meta["duration_sec"] // 60)
                     dur_sec_val = int(meta["duration_sec"] % 60)
                     chan_desc = "Stereo" if meta["channels"] == 2 else "Mono"
                     st.markdown(f"""
                     <div class="glass-card" style="padding:1rem 1.2rem;">
                       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
-                        <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Format</div>
-                             <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;">{meta['format']}</div></div>
+                        <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Track File</div>
+                             <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{audio_name}</div></div>
                         <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Duration</div>
                              <div style="font-size:0.88rem;font-weight:600;color:#f0f4f8;margin-top:2px;">{dur_min:02d}:{dur_sec_val:02d}</div></div>
                         <div><div style="font-size:0.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;">Sample Rate</div>
@@ -970,13 +1033,13 @@ def render_ui():
                     st.warning(f"Could not read audio metadata: {me}")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            run_btn = st.button("🚀  Analyse Track & Predict Genre", type="primary", use_container_width=True)
+            run_btn = st.button(f"🚀  Analyse '{audio_name}' & Predict Genre", type="primary")
 
             if run_btn:
                 with st.spinner("Extracting Mel-spectrograms, chunking audio, and running CRNN inference..."):
                     try:
-                        X_test = load_and_preprocess_file(test_audio)
-                        raw_wave, sr = load_audio_waveform(test_audio, target_sr=TARGET_SR)
+                        X_test = load_and_preprocess_file(io.BytesIO(audio_bytes))
+                        raw_wave, sr = load_audio_waveform(io.BytesIO(audio_bytes), target_sr=TARGET_SR)
                         model = load_trained_model(active_model_path)
                         predicted_idx, top_predictions, mean_probabilities, chunk_details = model_prediction(
                             X_test, model=model, return_chunk_details=True
