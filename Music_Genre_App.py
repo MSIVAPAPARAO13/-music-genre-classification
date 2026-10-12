@@ -118,11 +118,12 @@ def load_audio_waveform(file_path_or_bytes, target_sr=TARGET_SR):
     return audio_data, sample_rate
 
 
-def load_and_preprocess_file(file_path, target_shape=TARGET_SHAPE):
+def load_and_preprocess_file(file_path, target_shape=TARGET_SHAPE, max_duration_sec=120):
     """
     Load an audio file, resample to TARGET_SR (22,050 Hz) to match training data,
     slice into 4-second chunks with 2-second overlap, and extract 150x150 Mel spectrograms.
-    Incomplete chunks (< 4.0s) and empty audio are rejected to prevent model input distortion.
+    Incomplete chunks (< 4.0s), empty audio, and silent audio are rejected.
+    Audio longer than max_duration_sec is bounded to prevent unbounded memory growth.
     """
     if hasattr(file_path, "seek"):
         file_path.seek(0)
@@ -134,6 +135,19 @@ def load_and_preprocess_file(file_path, target_shape=TARGET_SHAPE):
 
     if audio_data is None or len(audio_data) == 0:
         raise ValueError("Audio file is empty or contains no decodable audio stream.")
+
+    # Silence check: reject tracks with zero or imperceptible acoustic energy
+    peak_amp = float(np.max(np.abs(audio_data)))
+    rms_amp = float(np.sqrt(np.mean(audio_data ** 2)))
+    if peak_amp < 1e-4 or rms_amp < 1e-5:
+        raise ValueError(
+            f"Audio file is silent or contains imperceptible amplitude (Peak: {peak_amp:.1e}, RMS: {rms_amp:.1e}). "
+            "Audible musical content is required for genre classification."
+        )
+
+    # Bound duration to max_duration_sec to keep memory usage bounded on long files
+    if max_duration_sec is not None and len(audio_data) > int(max_duration_sec * sample_rate):
+        audio_data = audio_data[:int(max_duration_sec * sample_rate)]
 
     chunk_samples = CHUNK_DURATION * sample_rate
     overlap_samples = OVERLAP_DURATION * sample_rate
@@ -161,7 +175,13 @@ def load_and_preprocess_file(file_path, target_shape=TARGET_SHAPE):
     if len(data) == 0:
         raise ValueError("No complete 4-second chunks could be extracted from this audio file.")
 
-    return np.array(data, dtype=np.float32)
+    chunks_array = np.array(data, dtype=np.float32)
+
+    # Sanitize any non-finite values (NaNs, Infs)
+    if np.isnan(chunks_array).any() or np.isinf(chunks_array).any():
+        chunks_array = np.nan_to_num(chunks_array, nan=0.0, posinf=1.0, neginf=0.0)
+
+    return chunks_array
 
 
 # ---------------------------------------------------------
@@ -989,11 +1009,14 @@ def render_ui():
             test_audio = st.file_uploader(
                 "Drop your audio file here or click to browse",
                 type=["mp3", "wav"],
-                help="Supports MP3 and WAV formats. Minimum 4.0 seconds duration required."
+                help="Supports MP3 and WAV formats. Minimum 4.0 seconds duration required. Max upload size: 25 MB."
             )
             if test_audio is not None:
-                audio_bytes = test_audio.getvalue()
-                audio_name = test_audio.name
+                if test_audio.size > 25 * 1024 * 1024:
+                    st.error(f"⚠️ File size ({test_audio.size / (1024*1024):.1f} MB) exceeds the 25 MB deployment limit. Please upload an audio track under 25 MB.")
+                else:
+                    audio_bytes = test_audio.getvalue()
+                    audio_name = test_audio.name
             st.markdown('</div>', unsafe_allow_html=True)
 
         if audio_bytes is not None and len(audio_bytes) > 0:
@@ -1033,7 +1056,14 @@ def render_ui():
                     st.warning(f"Could not read audio metadata: {me}")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            run_btn = st.button(f"🚀  Analyse '{audio_name}' & Predict Genre", type="primary")
+            col_act1, col_act2 = st.columns([2.5, 1], gap="medium")
+            with col_act1:
+                run_btn = st.button(f"🚀  Analyse '{audio_name}' & Predict Genre", type="primary")
+            with col_act2:
+                reset_btn = st.button("🔄  Reset Analysis")
+                if reset_btn:
+                    st.session_state["analysis_ready"] = False
+                    st.rerun()
 
             if run_btn:
                 with st.spinner("Extracting Mel-spectrograms, chunking audio, and running CRNN inference..."):

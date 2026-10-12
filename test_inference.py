@@ -78,6 +78,24 @@ class TestAudioPreprocessing:
 
         assert chunks.shape == (1, TARGET_SHAPE[0], TARGET_SHAPE[1], 1)
 
+    def test_silent_audio_rejection(self):
+        """Verify that zero-amplitude/imperceptible audio raises a ValueError."""
+        buf_silent = io.BytesIO()
+        silent_wave = np.zeros(int(10.0 * TARGET_SR), dtype=np.float32)
+        sf.write(buf_silent, silent_wave, TARGET_SR, format="WAV")
+        buf_silent.seek(0)
+
+        with pytest.raises(ValueError, match="silent or contains imperceptible amplitude"):
+            load_and_preprocess_file(buf_silent)
+
+    def test_oversized_audio_windowing(self):
+        """Verify that audio exceeding 120s is safely bounded to 120s max analysis window."""
+        buf_long = create_synthetic_wav(duration_seconds=130.0, sr=TARGET_SR)
+        chunks = load_and_preprocess_file(buf_long, max_duration_sec=120)
+
+        # 120s with 4s chunk and 2s step = (120 - 4)/2 + 1 = 59 chunks
+        assert chunks.shape[0] == 59
+
 
 class TestModelPredictionHandling:
     def test_mock_model_prediction_and_top3_ranking(self):
